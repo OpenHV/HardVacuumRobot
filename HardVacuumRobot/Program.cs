@@ -1,6 +1,8 @@
 ﻿using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using System.Linq;
+using System.Timers;
 using DSharpPlus;
 using DSharpPlus.EventArgs;
 using Microsoft.Extensions.Logging;
@@ -58,6 +60,12 @@ namespace OpenHV
         private Task GuildAvailable(DiscordClient sender, GuildCreateEventArgs e)
         {
             sender.Logger.LogInformation(BotEventId, $"Guild available: {e.Guild.Name}");
+
+            var channels = e.Guild.Channels;
+            var serverWatcher = new ServerWatcher();
+            var channel = channels.Where(c => c.Value.Name == "play").Select(c => c.Value).FirstOrDefault();
+            if (channel != null)
+                serverWatcher.ScanServers(Client, channel).Start();
 
             return Task.CompletedTask;
         }
