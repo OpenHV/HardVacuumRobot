@@ -17,8 +17,8 @@ namespace OpenHV
 
         public static void Main(string[] args)
         {
-            var prog = new Program();
-            prog.RunBotAsync().GetAwaiter().GetResult();
+            var program = new Program();
+            program.RunBotAsync().GetAwaiter().GetResult();
         }
 
         public async Task RunBotAsync()
