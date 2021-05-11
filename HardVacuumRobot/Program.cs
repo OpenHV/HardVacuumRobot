@@ -2,7 +2,6 @@
 using System.Text;
 using System.Threading.Tasks;
 using System.Linq;
-using System.Timers;
 using DSharpPlus;
 using DSharpPlus.EventArgs;
 using Microsoft.Extensions.Logging;
@@ -65,7 +64,7 @@ namespace OpenHV
             var serverWatcher = new ServerWatcher();
             var channel = channels.Where(c => c.Value.Name == "play").Select(c => c.Value).FirstOrDefault();
             if (channel != null)
-                serverWatcher.ScanServers(Client, channel).Start();
+                serverWatcher.ScanServers(channel).Start();
 
             return Task.CompletedTask;
         }

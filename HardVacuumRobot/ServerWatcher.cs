@@ -1,12 +1,10 @@
+using System;
 using System.Collections.Generic;
 using System.Threading;
-using System.Text;
 using System.Threading.Tasks;
 using System.Net;
-using DSharpPlus;
-using DSharpPlus.EventArgs;
+using System.Linq;
 using DSharpPlus.Entities;
-using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
 namespace OpenHV
@@ -14,8 +12,10 @@ namespace OpenHV
     public class ServerWatcher
     {
         readonly string MasterServerAddress = "https://master.openra.net/games?protocol=2&type=json";
+        readonly string ResourceServerAddress = "https://resource.openra.net/map/hash/";
+        readonly List<ServerJson> WaitingList = new List<ServerJson>();
 
-        public Task ScanServers(DiscordClient client, DiscordChannel channel)
+        public Task ScanServers(DiscordChannel channel)
         {
             while (true)
             {
@@ -23,11 +23,34 @@ namespace OpenHV
                 var servers = JsonConvert.DeserializeObject<List<ServerJson>>(json);
                 foreach (var server in servers)
                 {
-                    if (server.Mod == "hv")
-                        client.SendMessageAsync(channel, server.Name);
+                    if (server.Mod != "hv")
+                        continue;
+
+                    if (server.Players == 0 && WaitingList.Contains(server))
+                        WaitingList.Remove(server);
+
+                    if (server.Players > 0 && !WaitingList.Contains(server))
+                    {
+                        json = new WebClient().DownloadString($"{ResourceServerAddress}{server.Map}");
+                        var map = JsonConvert.DeserializeObject<List<MapJson>>(json).First();
+
+                        var embed = new DiscordEmbedBuilder()
+                            .WithColor(DiscordColor.Orange)
+                            .WithDescription($"Join {server.Address}")
+                            .WithTitle($"{server.Name}")
+                            .WithAuthor("Server waiting for players.")
+                            .WithImageUrl($"https://resource.openra.net/maps/{map.Id}/minimap")
+                            .WithFooter($"{map.Title} ({map.Players} players)")
+                            .WithTimestamp(DateTime.Now);
+                        var message = new DiscordMessageBuilder()
+                            .WithEmbed(embed);
+                        message.SendAsync(channel);
+
+                        WaitingList.Add(server);
+                    }
                 }
 
-                Thread.Sleep(5000);
+                Thread.Sleep(1000);
             }
         }
     }
@@ -84,5 +107,107 @@ namespace OpenHV
 
         [JsonProperty("location")]
         public string Location { get; private set; }
+
+        public override bool Equals(object obj)
+        {
+            if (obj == null)
+                return false;
+
+            var server = (ServerJson)obj;
+            return Address == server.Address;
+        }
+    }
+
+    public struct MapJson
+    {
+        [JsonProperty("id")]
+        public int Id { get; private set; }
+
+        [JsonProperty("title")]
+        public string Title { get; private set; }
+
+        [JsonProperty("description")]
+        public string Description { get; private set; }
+
+        [JsonProperty("info")]
+        public string Info { get; private set; }
+
+        [JsonProperty("author")]
+        public string Author { get; private set; }
+
+        [JsonProperty("map_type")]
+        public string Type { get; private set; }
+
+        [JsonProperty("players")]
+        public string Players { get; private set; }
+
+        [JsonProperty("game_mod")]
+        public string Mod { get; private set; }
+
+        [JsonProperty("map_hash")]
+        public string Hash { get; private set; }
+
+        [JsonProperty("width")]
+        public int Width { get; private set; }
+
+        [JsonProperty("height")]
+        public int Height { get; private set; }
+
+        [JsonProperty("bounds")]
+        public string Bounds { get; private set; }
+
+        [JsonProperty("spawnpoints")]
+        public string SpawnPoints { get; private set; }
+
+        [JsonProperty("tileset")]
+        public string Tileset { get; private set; }
+
+        [JsonProperty("revision")]
+        public int Revision { get; private set; }
+
+        [JsonProperty("last_revision")]
+        public bool LastRevision { get; private set; }
+
+        [JsonProperty("requires_upgrade")]
+        public bool RequiresUpgrade { get; private set; }
+
+        [JsonProperty("advanced_map")]
+        public bool AdvancedMap { get; private set; }
+
+        [JsonProperty("lua")]
+        public bool Lua { get; private set; }
+
+        [JsonProperty("posted")]
+        public DateTime Posted { get; private set; }
+
+        [JsonProperty("viewed")]
+        public int Viewed { get; private set; }
+
+        [JsonProperty("downloaded")]
+        public int Downloaded { get; private set; }
+
+        [JsonProperty("rating")]
+        public float Rating { get; private set; }
+
+        [JsonProperty("license")]
+        public string License { get; private set; }
+
+        [JsonProperty("downloading")]
+        public string Downloading { get; private set; }
+
+        [JsonProperty("mapformat")]
+        public int MapFormat { get; private set; }
+
+        [JsonProperty("parser")]
+        public string Parser { get; private set; }
+
+        [JsonProperty("map_grid_type")]
+        public string GridType { get; private set; }
+
+        [JsonProperty("rules")]
+        public string Rules { get; private set; }
+
+        [JsonProperty("reports")]
+        public string Reports { get; private set; }
     }
 }
