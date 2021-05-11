@@ -36,7 +36,7 @@ namespace OpenHV
                 TokenType = TokenType.Bot,
 
                 AutoReconnect = true,
-                MinimumLogLevel = LogLevel.Debug
+                MinimumLogLevel = LogLevel.Information
             };
 
             this.Client = new DiscordClient(config);
