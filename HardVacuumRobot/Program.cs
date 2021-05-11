@@ -11,9 +11,9 @@ namespace OpenHV
 {
     public class Program
     {
-        public readonly EventId BotEventId = new EventId(42, "HV Bot");
+        readonly EventId eventId = new EventId(42, "HV Bot");
 
-        public DiscordClient Client { get; set; }
+        DiscordClient client;
 
         public static void Main(string[] args)
         {
@@ -38,27 +38,27 @@ namespace OpenHV
                 MinimumLogLevel = LogLevel.Information
             };
 
-            Client = new DiscordClient(config);
+            client = new DiscordClient(config);
 
-            Client.Ready += ClientReady;
-            Client.GuildAvailable += GuildAvailable;
-            Client.ClientErrored += ClientError;
+            client.Ready += ClientReady;
+            client.GuildAvailable += GuildAvailable;
+            client.ClientErrored += ClientError;
 
-            await Client.ConnectAsync();
+            await client.ConnectAsync();
 
             await Task.Delay(-1);
         }
 
         Task ClientReady(DiscordClient sender, ReadyEventArgs e)
         {
-            sender.Logger.LogInformation(BotEventId, "Client is ready to process events.");
+            sender.Logger.LogInformation(eventId, "Client is ready to process events.");
 
             return Task.CompletedTask;
         }
 
         Task GuildAvailable(DiscordClient sender, GuildCreateEventArgs e)
         {
-            sender.Logger.LogInformation(BotEventId, $"Guild available: {e.Guild.Name}");
+            sender.Logger.LogInformation(eventId, $"Guild available: {e.Guild.Name}");
 
             var channels = e.Guild.Channels;
             var serverWatcher = new ServerWatcher();
@@ -71,7 +71,7 @@ namespace OpenHV
 
         Task ClientError(DiscordClient sender, ClientErrorEventArgs e)
         {
-            sender.Logger.LogError(BotEventId, e.Exception, "Exception occured");
+            sender.Logger.LogError(eventId, e.Exception, "Exception occured");
 
             return Task.CompletedTask;
         }
