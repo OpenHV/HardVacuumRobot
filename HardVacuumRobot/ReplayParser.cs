@@ -29,31 +29,38 @@ namespace HardVacuumRobot
 
 				var filePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
 
-				using var webClient = new WebClient();
-				webClient.DownloadFile(attachment.Url, filePath);
-
-				var miniYaml = ExtractMetaData(filePath).Replace("\t", "  ");
-				var yaml = Regex.Replace(miniYaml.Replace("\t", "  "), @"@\d+", "");
-
-				var deserializer = new DeserializerBuilder()
-					.WithTypeConverter(new DateTimeConverter(DateTimeKind.Utc, CultureInfo.InvariantCulture, new[] { "yyyy-MM-dd HH-mm-ss" }))
-					.Build();
-
-				var splitYaml = yaml.Split("Player:");
-				var rootYaml = splitYaml[0];
-				var metadata = deserializer.Deserialize<ReplayMetadata>(rootYaml);
-				var players = new List<Player>();
-				foreach (var playerYaml in splitYaml.Skip(1))
+				try
 				{
-					var player = deserializer.Deserialize<Player>(playerYaml);
-					players.Add(player);
+					using var webClient = new WebClient();
+					webClient.DownloadFile(attachment.Url, filePath);
+
+					var miniYaml = ExtractMetaData(filePath).Replace("\t", "  ");
+					var yaml = Regex.Replace(miniYaml.Replace("\t", "  "), @"@\d+", "");
+
+					var deserializer = new DeserializerBuilder()
+						.WithTypeConverter(new DateTimeConverter(DateTimeKind.Utc, CultureInfo.InvariantCulture, new[] { "yyyy-MM-dd HH-mm-ss" }))
+						.Build();
+
+					var splitYaml = yaml.Split("Player:");
+					var rootYaml = splitYaml[0];
+					var metadata = deserializer.Deserialize<ReplayMetadata>(rootYaml);
+					var players = new List<Player>();
+					foreach (var playerYaml in splitYaml.Skip(1))
+					{
+						var player = deserializer.Deserialize<Player>(playerYaml);
+						players.Add(player);
+					}
+
+					var embed = CreateEmbed(metadata, players);
+					if (embed != null)
+						message.Channel.SendMessageAsync(embed: embed);
+
+					File.Delete(filePath);
 				}
-
-				var embed = CreateEmbed(metadata, players);
-				if (embed != null)
-					message.Channel.SendMessageAsync(embed: embed);
-
-				File.Delete(filePath);
+				catch (Exception e)
+				{
+					System.Console.WriteLine(e);
+				}
 			}
 		}
 

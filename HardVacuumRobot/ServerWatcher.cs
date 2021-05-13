@@ -25,39 +25,46 @@ namespace HardVacuumRobot
 		{
 			while (true)
 			{
-				var json = new WebClient().DownloadString(MasterServerAddress);
-				var servers = JsonConvert.DeserializeObject<List<Server>>(json);
-				foreach (var server in servers)
+				try
 				{
-					if (server.Mod != "hv")
-						continue;
-
-					if (server.Players == 0 && WaitingList.Contains(server))
-						WaitingList.Remove(server);
-
-
-					if (server.Players > 0 && !WaitingList.Contains(server))
+					var json = new WebClient().DownloadString(MasterServerAddress);
+					var servers = JsonConvert.DeserializeObject<List<Server>>(json);
+					foreach (var server in servers)
 					{
-						var map = ResourceCenter.GetMap(server.Map);
+						if (server.Mod != "hv")
+							continue;
 
-						var embed = new EmbedBuilder()
-							.WithColor(Color.Orange)
-							.WithDescription($"Join {server.Address}")
-							.WithTitle($"{server.Name}")
-							.WithAuthor("Server waiting for players.")
-							.WithTimestamp(DateTime.Now);
+						if (server.Players == 0 && WaitingList.Contains(server))
+							WaitingList.Remove(server);
 
-						if (map != null)
-							embed = embed
-								.WithImageUrl($"https://resource.openra.net/maps/{map.Value.Id}/minimap")
-								.WithFooter($"{map.Value.Title} ({map.Value.Players} players)");
 
-						channel.SendMessageAsync(embed: embed.Build());
-						WaitingList.Add(server);
+						if (server.Players > 0 && !WaitingList.Contains(server))
+						{
+							var map = ResourceCenter.GetMap(server.Map);
+
+							var embed = new EmbedBuilder()
+								.WithColor(Color.Orange)
+								.WithDescription($"Join {server.Address}")
+								.WithTitle($"{server.Name}")
+								.WithAuthor("Server waiting for players.")
+								.WithTimestamp(DateTime.Now);
+
+							if (map != null)
+								embed = embed
+									.WithImageUrl($"https://resource.openra.net/maps/{map.Value.Id}/minimap")
+									.WithFooter($"{map.Value.Title} ({map.Value.Players} players)");
+
+							channel.SendMessageAsync(embed: embed.Build());
+							WaitingList.Add(server);
+						}
 					}
-				}
 
-				Thread.Sleep(1000);
+					Thread.Sleep(1000);
+				}
+				catch (Exception e)
+				{
+					System.Console.WriteLine(e);
+				}
 			}
 		}
 	}

@@ -23,6 +23,7 @@ namespace HardVacuumRobot
 			client.Log += LogAsync;
 			client.Ready += ReadyAsync;
 			client.MessageReceived += MessageReceivedAsync;
+			client.Disconnected += DisconnectAsync;
 		}
 
 		public async Task MainAsync()
@@ -55,6 +56,16 @@ namespace HardVacuumRobot
 				return Task.CompletedTask;
 
 			ReplayParser.ScanAttachment(message);
+			return Task.CompletedTask;
+		}
+
+		Task DisconnectAsync(Exception e)
+		{
+			// Due to various problems:
+			// https://github.com/discord-net/Discord.Net/issues/960
+			// https://github.com/discord-net/Discord.Net/issues/1572
+			// we terminate here and restart from the outside
+			Environment.Exit(1);
 			return Task.CompletedTask;
 		}
 	}

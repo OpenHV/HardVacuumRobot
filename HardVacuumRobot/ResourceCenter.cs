@@ -18,7 +18,9 @@ namespace HardVacuumRobot
 			{
 				var json = new WebClient().DownloadString($"{ResourceServerAddress}{hash}");
 				return JsonConvert.DeserializeObject<List<Map>>(json).First();
-			} catch (Exception e) {
+			}
+			catch (Exception e)
+			{
 				System.Console.WriteLine(e);
 			}
 
