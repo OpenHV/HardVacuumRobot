@@ -1,4 +1,4 @@
-This bot is based on [DSharpPlus](https://dsharpplus.github.io/). It's aim is to give a global multiplayer lobby experience.
+This bot is based on [Discord.Net](https://github.com/discord-net/Discord.Net). It's aim is to give a global multiplayer lobby experience. It makes use of the [Master Server](https://github.com/OpenRA/OpenRAMasterServer) and [Resource Center](https://github.com/OpenRA/OpenRA-Resources) APIs. This is inspired by the much more sophisticated [OraBot](https://github.com/OpenRA/Orabot/) project.
 
 ## Requirements
 The project was made using Visual Studio 2017, and targets .NET Core 3.1. You will need one of the following to open and build the projects:
@@ -18,7 +18,8 @@ You will also need to install [.NET Core 3.1 SDK](https://www.microsoft.com/net/
 
 ### Building the project and configuring the bot
 1. Open the project, select the startup bot, and compile it.
-2. Go to `HardVacuumBot` and edit `config.json` with the token.
+2. Go to `HardVacuumBot` and edit `App.config` with the token.
+3. `Server` and `LobbyChannel` require the IDs from Discord.
 
 ### Adding the bot to the server
 1. Go back to the app page, and copy the bot's **client ID**.

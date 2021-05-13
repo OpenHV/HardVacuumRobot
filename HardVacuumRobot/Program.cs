@@ -1,88 +1,61 @@
-﻿using System.IO;
-using System.Text;
+﻿using System;
+using System.Configuration;
+using System.Threading;
 using System.Threading.Tasks;
-using System.Linq;
-using DSharpPlus;
-using DSharpPlus.EventArgs;
-using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
+using Discord;
+using Discord.WebSocket;
 
-namespace OpenHV
+namespace HardVacuumRobot
 {
-    public class Program
-    {
-        readonly EventId eventId = new EventId(42, "HV Bot");
+	class Program
+	{
+		readonly DiscordSocketClient client;
 
-        DiscordClient client;
+		static void Main(string[] args)
+		{
+			new Program().MainAsync().GetAwaiter().GetResult();
+		}
 
-        public static void Main(string[] args)
-        {
-            var program = new Program();
-            program.RunBotAsync().GetAwaiter().GetResult();
-        }
+		public Program()
+		{
+			client = new DiscordSocketClient();
 
-        public async Task RunBotAsync()
-        {
-            var json = "";
-            using (var fileStream = File.OpenRead("config.json"))
-            using (var streamReader = new StreamReader(fileStream, new UTF8Encoding(false)))
-                json = await streamReader.ReadToEndAsync();
+			client.Log += LogAsync;
+			client.Ready += ReadyAsync;
+			client.MessageReceived += MessageReceivedAsync;
+		}
 
-            var configJson = JsonConvert.DeserializeObject<ConfigJson>(json);
-            var config = new DiscordConfiguration
-            {
-                Token = configJson.Token,
-                TokenType = TokenType.Bot,
+		public async Task MainAsync()
+		{
+			await client.LoginAsync(TokenType.Bot, ConfigurationManager.AppSettings["DiscordBotToken"]);
+			await client.StartAsync();
 
-                AutoReconnect = true,
-                MinimumLogLevel = LogLevel.Information
-            };
+			await Task.Delay(Timeout.Infinite);
+		}
 
-            client = new DiscordClient(config);
+		Task LogAsync(LogMessage log)
+		{
+			Console.WriteLine(log.ToString());
+			return Task.CompletedTask;
+		}
 
-            client.Ready += ClientReady;
-            client.GuildAvailable += GuildAvailable;
-            client.ClientErrored += ClientError;
+		Task ReadyAsync()
+		{
+			Console.WriteLine($"{client.CurrentUser} is connected!");
 
-            await client.ConnectAsync();
+			new ServerWatcher(client);
 
-            await Task.Delay(-1);
-        }
+			return Task.CompletedTask;
+		}
 
-        Task ClientReady(DiscordClient sender, ReadyEventArgs e)
-        {
-            sender.Logger.LogInformation(eventId, "Client is ready to process events.");
+		Task MessageReceivedAsync(SocketMessage message)
+		{
+			// The bot should never respond to itself.
+			if (message.Author.Id == client.CurrentUser.Id)
+				return Task.CompletedTask;
 
-            return Task.CompletedTask;
-        }
-
-        Task GuildAvailable(DiscordClient sender, GuildCreateEventArgs e)
-        {
-            sender.Logger.LogInformation(eventId, $"Guild available: {e.Guild.Name}");
-
-            var channels = e.Guild.Channels;
-            var serverWatcher = new ServerWatcher();
-            var channel = channels.Where(c => c.Value.Name == "play").Select(c => c.Value).FirstOrDefault();
-            if (channel != null)
-                serverWatcher.ScanServers(channel).Start();
-
-            return Task.CompletedTask;
-        }
-
-        Task ClientError(DiscordClient sender, ClientErrorEventArgs e)
-        {
-            sender.Logger.LogError(eventId, e.Exception, "Exception occured");
-
-            return Task.CompletedTask;
-        }
-    }
-
-    public struct ConfigJson
-    {
-        [JsonProperty("token")]
-        public string Token { get; private set; }
-
-        [JsonProperty("prefix")]
-        public string CommandPrefix { get; private set; }
-    }
+			ReplayParser.ScanAttachment(message);
+			return Task.CompletedTask;
+		}
+	}
 }
