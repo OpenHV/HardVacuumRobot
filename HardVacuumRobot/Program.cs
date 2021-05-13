@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Configuration;
+using System.Timers;
 using System.Threading;
 using System.Threading.Tasks;
 using Discord;
@@ -23,13 +24,16 @@ namespace HardVacuumRobot
 			client.Log += LogAsync;
 			client.Ready += ReadyAsync;
 			client.MessageReceived += MessageReceivedAsync;
-			client.Disconnected += DisconnectAsync;
 		}
 
 		public async Task MainAsync()
 		{
 			await client.LoginAsync(TokenType.Bot, ConfigurationManager.AppSettings["DiscordBotToken"]);
 			await client.StartAsync();
+
+			var timer = new System.Timers.Timer(5000);
+			timer.Elapsed += new ElapsedEventHandler(CheckConnection);
+			timer.Start();
 
 			await Task.Delay(Timeout.Infinite);
 		}
@@ -59,14 +63,14 @@ namespace HardVacuumRobot
 			return Task.CompletedTask;
 		}
 
-		Task DisconnectAsync(Exception e)
+		void CheckConnection(object sender, ElapsedEventArgs e)
 		{
 			// Due to various problems:
 			// https://github.com/discord-net/Discord.Net/issues/960
 			// https://github.com/discord-net/Discord.Net/issues/1572
 			// we terminate here and restart from the outside
-			Environment.Exit(1);
-			return Task.CompletedTask;
+			if (client.ConnectionState == ConnectionState.Disconnecting)
+				Environment.Exit(1);
 		}
 	}
 }
