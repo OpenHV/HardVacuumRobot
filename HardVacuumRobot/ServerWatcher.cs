@@ -23,12 +23,12 @@ namespace HardVacuumRobot
 
 		void ScanServers(SocketTextChannel channel)
 		{
+			System.Console.WriteLine("Started scanning for servers.");
+
 			while (true)
 			{
 				try
 				{
-					System.Console.WriteLine($"{DateTime.Now}: Scanning for servers.");
-
 					var json = new WebClient().DownloadString(MasterServerAddress);
 					var servers = JsonConvert.DeserializeObject<List<Server>>(json);
 					foreach (var server in servers)
