@@ -111,12 +111,6 @@ namespace HardVacuumRobot
 				new EmbedFieldBuilder
 				{
 					IsInline = true,
-					Name = "Mod:",
-					Value = metadata.Root.Mod
-				},
-				new EmbedFieldBuilder
-				{
-					IsInline = true,
 					Name = "Version:",
 					Value = metadata.Root.Version
 				},
