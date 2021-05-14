@@ -27,6 +27,8 @@ namespace HardVacuumRobot
 			{
 				try
 				{
+					System.Console.WriteLine($"{DateTime.Now}: Scanning for servers.");
+
 					var json = new WebClient().DownloadString(MasterServerAddress);
 					var servers = JsonConvert.DeserializeObject<List<Server>>(json);
 					foreach (var server in servers)
@@ -36,7 +38,6 @@ namespace HardVacuumRobot
 
 						if (server.Players == 0 && WaitingList.Contains(server))
 							WaitingList.Remove(server);
-
 
 						if (server.Players > 0 && !WaitingList.Contains(server))
 						{
@@ -59,7 +60,7 @@ namespace HardVacuumRobot
 						}
 					}
 
-					Thread.Sleep(3000);
+					Thread.Sleep(5000);
 				}
 				catch (Exception e)
 				{

@@ -28,6 +28,7 @@ namespace HardVacuumRobot
 					return;
 
 				var filePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+				System.Console.WriteLine($"Parsing attachment {attachment.Filename}");
 
 				try
 				{
