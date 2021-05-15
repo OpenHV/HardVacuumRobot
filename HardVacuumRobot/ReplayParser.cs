@@ -35,7 +35,7 @@ namespace HardVacuumRobot
 					using var webClient = new WebClient();
 					webClient.DownloadFile(attachment.Url, filePath);
 
-					var miniYaml = ExtractMetaData(filePath).Replace("\t", "  ");
+					var miniYaml = ExtractMetaData(filePath);
 					var yaml = Regex.Replace(miniYaml.Replace("\t", "  "), @"@\d+", "");
 
 					var deserializer = new DeserializerBuilder()
