@@ -60,7 +60,7 @@ namespace HardVacuumRobot
 				}
 				catch (Exception e)
 				{
-					System.Console.WriteLine(e);
+					Console.WriteLine(e);
 				}
 			}
 		}
@@ -69,31 +69,30 @@ namespace HardVacuumRobot
 		{
 			try
 			{
-				using (var fileStream = new FileStream(filePath, FileMode.Open))
+				using var fileStream = new FileStream(filePath, FileMode.Open);
+				if (!fileStream.CanSeek)
+					return null;
+
+				if (fileStream.Length < 20)
+					return null;
+
+				fileStream.Seek(-(4 + 4), SeekOrigin.End);
+				var dataLength = fileStream.ReadInt32();
+				if (fileStream.ReadInt32() == MetaEndMarker)
 				{
-					if (!fileStream.CanSeek)
-						return null;
+					// Go back by (end marker + length storage + data + version + start marker) bytes
+					fileStream.Seek(-(4 + 4 + dataLength + 4 + 4), SeekOrigin.Current);
 
-					if (fileStream.Length < 20)
-						return null;
+					var unknown1 = fileStream.ReadInt32();
+					var unknown2 = fileStream.ReadInt32();
+					var unknown3 = fileStream.ReadInt32();
 
-					fileStream.Seek(-(4 + 4), SeekOrigin.End);
-					var dataLength = fileStream.ReadInt32();
-					if (fileStream.ReadInt32() == MetaEndMarker)
-					{
-						// Go back by (end marker + length storage + data + version + start marker) bytes
-						fileStream.Seek(-(4 + 4 + dataLength + 4 + 4), SeekOrigin.Current);
-
-						var unknown1 = fileStream.ReadInt32();
-						var unknown2 = fileStream.ReadInt32();
-						var unknown3 = fileStream.ReadInt32();
-
-						using var streamReader = new StreamReader(fileStream, Encoding.UTF8);
-						var metadata = streamReader.ReadToEnd();
-						metadata = metadata.Remove(metadata.Length - 8);
-						return metadata;
-					}
+					using var streamReader = new StreamReader(fileStream, Encoding.UTF8);
+					var metadata = streamReader.ReadToEnd();
+					metadata = metadata.Remove(metadata.Length - 8);
+					return metadata;
 				}
+
 			}
 			catch (Exception ex)
 			{

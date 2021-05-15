@@ -31,7 +31,7 @@ namespace HardVacuumRobot
 			await client.LoginAsync(TokenType.Bot, ConfigurationManager.AppSettings["DiscordBotToken"]);
 			await client.StartAsync();
 
-			var timer = new System.Timers.Timer(5000);
+			var timer = new System.Timers.Timer(10000);
 			timer.Elapsed += new ElapsedEventHandler(CheckConnection);
 			timer.Start();
 
@@ -48,7 +48,8 @@ namespace HardVacuumRobot
 		{
 			Console.WriteLine($"{client.CurrentUser} is connected!");
 
-			new ServerWatcher(client);
+			var serverWatcher = new ServerWatcher(client);
+			serverWatcher.ScanServers(client);
 
 			return Task.CompletedTask;
 		}

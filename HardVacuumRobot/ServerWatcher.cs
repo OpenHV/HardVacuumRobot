@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Configuration;
-using System.Threading;
 using System.Net;
 using Discord;
 using Discord.WebSocket;
 using Newtonsoft.Json;
+using System.Threading.Tasks;
 
 namespace HardVacuumRobot
 {
@@ -13,23 +13,27 @@ namespace HardVacuumRobot
 	{
 		readonly string MasterServerAddress = "https://master.openra.net/games?protocol=2&type=json";
 		readonly List<Server> WaitingList = new List<Server>();
+		readonly SocketTextChannel channel;
 
 		public ServerWatcher(DiscordSocketClient client)
 		{
 			var server = client.GetGuild(ulong.Parse(ConfigurationManager.AppSettings["Server"]));
-			var channel = server.GetTextChannel(ulong.Parse(ConfigurationManager.AppSettings["LobbyChannel"]));
-			ScanServers(channel);
+			channel = server.GetTextChannel(ulong.Parse(ConfigurationManager.AppSettings["LobbyChannel"]));
 		}
 
-		void ScanServers(SocketTextChannel channel)
+		public async Task ScanServers(DiscordSocketClient discordClient)
 		{
-			System.Console.WriteLine("Started scanning for servers.");
+			Console.WriteLine("Started scanning for servers.");
 
 			while (true)
 			{
+				if (discordClient.ConnectionState != ConnectionState.Connected)
+					continue;
+
 				try
 				{
-					var json = new WebClient().DownloadString(MasterServerAddress);
+					using var webClient = new WebClient();
+					var json = webClient.DownloadString(MasterServerAddress);
 					var servers = JsonConvert.DeserializeObject<List<Server>>(json);
 					foreach (var server in servers)
 					{
@@ -55,16 +59,17 @@ namespace HardVacuumRobot
 									.WithImageUrl($"https://resource.openra.net/maps/{map.Value.Id}/minimap")
 									.WithFooter($"{map.Value.Title} ({map.Value.Players} players)");
 
-							channel.SendMessageAsync(embed: embed.Build());
+							await channel.SendMessageAsync(embed: embed.Build());
 							WaitingList.Add(server);
 						}
 					}
 
-					Thread.Sleep(5000);
+					await Task.Delay(TimeSpan.FromSeconds(5));
 				}
-				catch (Exception e)
+				catch (WebException e)
 				{
-					System.Console.WriteLine(e);
+					Console.WriteLine(e.Message);
+					await Task.Delay(TimeSpan.FromSeconds(60));
 				}
 			}
 		}
