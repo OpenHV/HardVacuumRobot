@@ -12,7 +12,7 @@ namespace HardVacuumRobot
 	{
 		readonly DiscordSocketClient client;
 
-		static void Main(string[] args)
+		static void Main()
 		{
 			new Program().MainAsync().GetAwaiter().GetResult();
 		}
@@ -49,7 +49,7 @@ namespace HardVacuumRobot
 			Console.WriteLine($"{client.CurrentUser} is connected!");
 
 			var serverWatcher = new ServerWatcher(client);
-			serverWatcher.ScanServers(client);
+			Task.Factory.StartNew(() => serverWatcher.ScanServers(client));
 
 			return Task.CompletedTask;
 		}
