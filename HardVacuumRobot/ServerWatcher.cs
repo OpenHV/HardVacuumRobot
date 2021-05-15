@@ -27,6 +27,9 @@ namespace HardVacuumRobot
 
 			while (true)
 			{
+				if (discordClient.ConnectionState != ConnectionState.Disconnecting)
+					return;
+
 				if (discordClient.ConnectionState != ConnectionState.Connected)
 					continue;
 
