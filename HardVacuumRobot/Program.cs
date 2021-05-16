@@ -51,6 +51,9 @@ namespace HardVacuumRobot
 			var serverWatcher = new ServerWatcher(client);
 			Task.Factory.StartNew(() => serverWatcher.ScanServers(client));
 
+			var resourceCenter = new ResourceCenter(client);
+			Task.Factory.StartNew(() => resourceCenter.RetrieveNewMaps(client));
+
 			return Task.CompletedTask;
 		}
 

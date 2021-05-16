@@ -1,7 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Net;
 using System.Linq;
+using System.Threading.Tasks;
+using Discord;
+using Discord.WebSocket;
 using Newtonsoft.Json;
 
 namespace HardVacuumRobot
@@ -9,8 +13,62 @@ namespace HardVacuumRobot
 	public class ResourceCenter
 	{
 		const string ResourceServerAddress = "https://resource.openra.net/map/hash/";
+		const string LastMapAddress = "https://resource.openra.net/map/lastmap/";
 
-		public ResourceCenter() { }
+		readonly SocketTextChannel channel;
+		string lastHash = "";
+
+		public ResourceCenter(DiscordSocketClient client)
+		{
+			var server = client.GetGuild(ulong.Parse(ConfigurationManager.AppSettings["Server"]));
+			channel = server.GetTextChannel(ulong.Parse(ConfigurationManager.AppSettings["DevelopmentChannel"]));
+		}
+
+		public async Task RetrieveNewMaps(DiscordSocketClient discordClient)
+		{
+			Console.WriteLine("Started looking for new maps.");
+
+			while (true)
+			{
+				if (discordClient.ConnectionState != ConnectionState.Connected)
+					continue;
+
+				try
+				{
+					using var webClient = new WebClient();
+					var json = webClient.DownloadString(LastMapAddress);
+					var maps = JsonConvert.DeserializeObject<List<Map>>(json);
+					foreach (var map in maps)
+					{
+						if (lastHash == map.Hash)
+							continue;
+
+						if (map.Mod != "hv")
+							continue;
+
+						var embed = new EmbedBuilder()
+							.WithColor(Color.Blue)
+							.WithDescription(map.Info)
+							.WithTitle(map.Title)
+							.WithAuthor("A new map has been uploaded.")
+							.WithFooter($"by {map.Author}")
+							.WithImageUrl($"https://resource.openra.net/maps/{map.Id}/minimap")
+							.WithTimestamp(DateTime.Now);
+
+						await channel.SendMessageAsync(embed: embed.Build());
+
+						lastHash = map.Hash;
+					}
+
+					await Task.Delay(TimeSpan.FromHours(1));
+				}
+				catch (WebException e)
+				{
+					Console.WriteLine(e.Message);
+					await Task.Delay(TimeSpan.FromHours(1));
+				}
+			}
+		}
 
 		public static Map? GetMap(string hash)
 		{
