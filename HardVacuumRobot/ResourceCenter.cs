@@ -50,6 +50,7 @@ namespace HardVacuumRobot
 							.WithColor(Color.Blue)
 							.WithDescription(map.Info)
 							.WithTitle(map.Title)
+							.WithUrl($"https://resource.openra.net/maps/{map.Id}")
 							.WithAuthor("A new map has been uploaded.")
 							.WithFooter($"by {map.Author}")
 							.WithImageUrl($"https://resource.openra.net/maps/{map.Id}/minimap")
