@@ -35,6 +35,7 @@ namespace HardVacuumRobot
 					using var webClient = new WebClient();
 					var json = webClient.DownloadString(MasterServerAddress);
 					var servers = JsonConvert.DeserializeObject<List<Server>>(json);
+					System.Console.WriteLine($"Found {servers.Count} servers.");
 					foreach (var server in servers)
 					{
 						if (server.Mod != "hv")
