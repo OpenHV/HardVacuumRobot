@@ -48,11 +48,13 @@ namespace HardVacuumRobot
 		{
 			Console.WriteLine($"{client.CurrentUser} is connected!");
 
+			var cancellationTokenSource = new CancellationTokenSource();
+
 			var serverWatcher = new ServerWatcher(client);
-			Task.Factory.StartNew(() => serverWatcher.ScanServers(client));
+			Task.Factory.StartNew(() => serverWatcher.ScanServers(client), cancellationTokenSource.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
 			var resourceCenter = new ResourceCenter(client);
-			Task.Factory.StartNew(() => resourceCenter.RetrieveNewMaps(client));
+			Task.Factory.StartNew(() => resourceCenter.RetrieveNewMaps(client), cancellationTokenSource.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
 			return Task.CompletedTask;
 		}
