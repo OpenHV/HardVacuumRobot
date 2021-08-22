@@ -64,6 +64,12 @@ namespace HardVacuumRobot
 						}
 					}
 
+					foreach(var server in WaitingList)
+					{
+						if (!servers.Contains(server))
+							WaitingList.Remove(server);
+					}
+
 					await Task.Delay(TimeSpan.FromSeconds(5));
 				}
 				catch (WebException e)
