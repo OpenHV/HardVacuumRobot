@@ -12,6 +12,8 @@ namespace HardVacuumRobot
 	{
 		readonly DiscordSocketClient client;
 
+		CancellationTokenSource cancellationTokenSource;
+
 		static void Main()
 		{
 			new Program().MainAsync().GetAwaiter().GetResult();
@@ -20,7 +22,6 @@ namespace HardVacuumRobot
 		public Program()
 		{
 			client = new DiscordSocketClient();
-
 			client.Log += LogAsync;
 			client.Ready += ReadyAsync;
 			client.MessageReceived += MessageReceivedAsync;
@@ -48,13 +49,18 @@ namespace HardVacuumRobot
 		{
 			Console.WriteLine($"{client.CurrentUser} is connected!");
 
-			var cancellationTokenSource = new CancellationTokenSource();
+			if (cancellationTokenSource != null)
+				cancellationTokenSource.Cancel();
+			else
+				cancellationTokenSource = new CancellationTokenSource();
+
+			var token = cancellationTokenSource.Token;
 
 			var serverWatcher = new ServerWatcher(client);
-			Task.Factory.StartNew(() => serverWatcher.ScanServers(client), cancellationTokenSource.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+			Task.Factory.StartNew(() => serverWatcher.ScanServers(client, token), token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
 			var resourceCenter = new ResourceCenter(client);
-			Task.Factory.StartNew(() => resourceCenter.RetrieveNewMaps(client), cancellationTokenSource.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+			Task.Factory.StartNew(() => resourceCenter.RetrieveNewMaps(client, token), token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
 			return Task.CompletedTask;
 		}

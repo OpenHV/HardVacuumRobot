@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Net;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
@@ -24,11 +25,11 @@ namespace HardVacuumRobot
 			channel = server.GetTextChannel(ulong.Parse(ConfigurationManager.AppSettings["DevelopmentChannel"]));
 		}
 
-		public async Task RetrieveNewMaps(DiscordSocketClient discordClient)
+		public async Task RetrieveNewMaps(DiscordSocketClient discordClient, CancellationToken token)
 		{
 			Console.WriteLine("Started looking for new maps.");
 
-			while (true)
+			while (!token.IsCancellationRequested)
 			{
 				if (discordClient.ConnectionState != ConnectionState.Connected)
 					continue;

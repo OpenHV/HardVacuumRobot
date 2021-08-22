@@ -5,6 +5,7 @@ using System.Net;
 using Discord;
 using Discord.WebSocket;
 using Newtonsoft.Json;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace HardVacuumRobot
@@ -21,11 +22,11 @@ namespace HardVacuumRobot
 			channel = server.GetTextChannel(ulong.Parse(ConfigurationManager.AppSettings["LobbyChannel"]));
 		}
 
-		public async Task ScanServers(DiscordSocketClient discordClient)
+		public async Task ScanServers(DiscordSocketClient discordClient, CancellationToken token)
 		{
 			Console.WriteLine("Started scanning for servers.");
 
-			while (true)
+			while (!token.IsCancellationRequested)
 			{
 				if (discordClient.ConnectionState != ConnectionState.Connected)
 					continue;
