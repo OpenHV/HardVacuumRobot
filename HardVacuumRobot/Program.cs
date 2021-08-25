@@ -81,7 +81,7 @@ namespace HardVacuumRobot
 			// https://github.com/discord-net/Discord.Net/issues/960
 			// https://github.com/discord-net/Discord.Net/issues/1572
 			// we terminate here and restart from the outside
-			if (client.ConnectionState != ConnectionState.Connected)
+			if (client.ConnectionState != ConnectionState.Disconnecting)
 				Environment.Exit(1);
 		}
 	}
