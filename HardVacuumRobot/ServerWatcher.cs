@@ -41,9 +41,6 @@ namespace HardVacuumRobot
 						if (server.Mod != "hv")
 							continue;
 
-						if (server.Players == 0 && WaitingList.Contains(server))
-							WaitingList.Remove(server);
-
 						if (server.Players > 0 && !WaitingList.Contains(server))
 						{
 							var map = ResourceCenter.GetMap(server.Map);
