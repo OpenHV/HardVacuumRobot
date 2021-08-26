@@ -41,6 +41,9 @@ namespace HardVacuumRobot
 						if (server.Mod != "hv")
 							continue;
 
+						if (server.MaxPlayers < 2)
+							continue;
+
 						if (server.Players > 0 && !WaitingList.Contains(server))
 						{
 							var map = ResourceCenter.GetMap(server.Map);
