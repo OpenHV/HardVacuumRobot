@@ -44,6 +44,9 @@ namespace HardVacuumRobot
 						if (server.MaxPlayers < 2)
 							continue;
 
+						if (server.State != (int)ServerState.WaitingPlayers)
+							continue;
+
 						if (server.Players > 0 && !WaitingList.Contains(server))
 						{
 							var map = ResourceCenter.GetMap(server.Map);
@@ -80,6 +83,13 @@ namespace HardVacuumRobot
 				}
 			}
 		}
+	}
+
+	public enum ServerState
+	{
+		WaitingPlayers = 1,
+		GameStarted = 2,
+		ShuttingDown = 3
 	}
 
 	public struct Server
