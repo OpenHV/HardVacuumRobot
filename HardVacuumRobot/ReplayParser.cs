@@ -29,6 +29,7 @@ namespace HardVacuumRobot
 
 				var filePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
 				System.Console.WriteLine($"Parsing attachment {attachment.Filename}");
+				var yaml = "";
 
 				try
 				{
@@ -36,7 +37,7 @@ namespace HardVacuumRobot
 					webClient.DownloadFile(attachment.Url, filePath);
 
 					var miniYaml = ExtractMetaData(filePath);
-					var yaml = Regex.Replace(miniYaml.Replace("\t", "  "), @"@\d+", "");
+					yaml = Regex.Replace(miniYaml.Replace("\t", "  "), @"@\d+", "");
 
 					var deserializer = new DeserializerBuilder()
 						.WithTypeConverter(new DateTimeConverter(DateTimeKind.Utc, CultureInfo.InvariantCulture, new[] { "yyyy-MM-dd HH-mm-ss" }))
@@ -61,6 +62,7 @@ namespace HardVacuumRobot
 				catch (Exception e)
 				{
 					Console.WriteLine(e);
+					System.Console.WriteLine(yaml);
 				}
 			}
 		}
