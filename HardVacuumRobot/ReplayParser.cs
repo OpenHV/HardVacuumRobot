@@ -38,6 +38,7 @@ namespace HardVacuumRobot
 
 					var miniYaml = ExtractMetaData(filePath);
 					yaml = Regex.Replace(miniYaml.Replace("\t", "  "), @"@\d+", "");
+					yaml = yaml.Replace("{DEV_VERSION}", "development");
 
 					var deserializer = new DeserializerBuilder()
 						.WithTypeConverter(new DateTimeConverter(DateTimeKind.Utc, CultureInfo.InvariantCulture, new[] { "yyyy-MM-dd HH-mm-ss" }))
