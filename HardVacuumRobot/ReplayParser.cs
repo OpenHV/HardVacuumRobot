@@ -35,6 +35,7 @@ namespace HardVacuumRobot
 				{
 					using var webClient = new WebClient();
 					webClient.DownloadFile(attachment.Url, filePath);
+					System.Console.WriteLine($"Downloading to {filePath}");
 
 					var miniYaml = ExtractMetaData(filePath);
 					yaml = Regex.Replace(miniYaml.Replace("\t", "  "), @"@\d+", "");
@@ -74,10 +75,10 @@ namespace HardVacuumRobot
 			{
 				using var fileStream = new FileStream(filePath, FileMode.Open);
 				if (!fileStream.CanSeek)
-					return null;
+					throw new InvalidOperationException("Can't seek stream.");
 
 				if (fileStream.Length < 20)
-					return null;
+					throw new InvalidDataException("File too short.");
 
 				fileStream.Seek(-(4 + 4), SeekOrigin.End);
 				var dataLength = fileStream.ReadInt32();
@@ -95,11 +96,10 @@ namespace HardVacuumRobot
 					metadata = metadata.Remove(metadata.Length - 8);
 					return metadata;
 				}
-
 			}
-			catch (Exception ex)
+			catch (Exception e)
 			{
-				Console.WriteLine(ex.ToString());
+				Console.WriteLine(e.StackTrace);
 			}
 
 			return null;
