@@ -151,12 +151,12 @@ namespace HardVacuumRobot
 				return false;
 
 			var server = (Server)obj;
-			return Address == server.Address;
+			return Id == server.Id;
 		}
 
 		public override int GetHashCode()
 		{
-			return base.GetHashCode();
+			return Id;
 		}
 	}
 }
