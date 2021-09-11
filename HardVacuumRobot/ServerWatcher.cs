@@ -64,14 +64,22 @@ namespace HardVacuumRobot
 									.WithFooter($"{map.Value.Title} ({map.Value.Players} players)");
 
 							await channel.SendMessageAsync(embed: embed.Build());
+
+							System.Console.WriteLine($"Adding {server.Name} ({server.Id}) with {server.Players} players to the waiting list.");
 							WaitingList.Add(server);
 						}
 					}
 
-					foreach(var server in WaitingList)
+					foreach(var server in servers)
 					{
-						if (!servers.Contains(server))
-							WaitingList.Remove(server);
+						if (!WaitingList.Contains(server))
+							continue;
+
+						if (server.Players == 0)
+						{
+							if (WaitingList.Remove(server))
+								System.Console.WriteLine($"Removing {server.Name} ({server.Id}) with {server.Players} players from waiting list.");
+						}
 					}
 
 					await Task.Delay(TimeSpan.FromSeconds(10));
