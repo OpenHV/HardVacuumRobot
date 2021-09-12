@@ -80,6 +80,12 @@ namespace HardVacuumRobot
 							if (WaitingList.Remove(server))
 								System.Console.WriteLine($"Removing {server.Name} ({server.Id}) with {server.Players} players from waiting list.");
 						}
+
+						if (server.State != (int)ServerState.WaitingPlayers)
+						{
+							if (WaitingList.Remove(server))
+								System.Console.WriteLine($"Removing {server.Name} ({server.Id}) with state {server.State} from waiting list.");
+						}
 					}
 
 					await Task.Delay(TimeSpan.FromSeconds(10));
