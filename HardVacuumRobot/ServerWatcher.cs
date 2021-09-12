@@ -88,6 +88,10 @@ namespace HardVacuumRobot
 						}
 					}
 
+					var removed = WaitingList.RemoveAll(server => !servers.Contains(server));
+					if (removed > 0)
+						System.Console.WriteLine($"Removing {removed} servers from waiting list as they vanished from the master server.");
+
 					await Task.Delay(TimeSpan.FromSeconds(10));
 				}
 				catch (WebException e)
