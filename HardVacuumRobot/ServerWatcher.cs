@@ -7,6 +7,7 @@ using Discord.WebSocket;
 using Newtonsoft.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace HardVacuumRobot
 {
@@ -57,7 +58,7 @@ namespace HardVacuumRobot
 								.WithColor(color)
 								.WithDescription($"{prefix} server waiting for players.")
 								.WithTitle($"{server.Name}")
-								.WithAuthor("Server waiting for players.")
+								.WithAuthor(server.Clients.Single(c => c.IsAdmin).Name)
 								.WithTimestamp(DateTime.Now);
 
 							if (map != null)
@@ -165,6 +166,9 @@ namespace HardVacuumRobot
 		[JsonProperty("location")]
 		public string Location { get; private set; }
 
+		[JsonProperty("clients")]
+		public List<Client> Clients { get; private set; }
+
 		public override bool Equals(object obj)
 		{
 			if (obj == null)
@@ -178,5 +182,35 @@ namespace HardVacuumRobot
 		{
 			return Id;
 		}
+	}
+
+	public struct Client
+	{
+		[JsonProperty("name")]
+		public string Name { get; private set; }
+
+		[JsonProperty("fingerprint")]
+		public string Fingerprint { get; private set; }
+
+		[JsonProperty("color")]
+		public string Color { get; private set; }
+
+		[JsonProperty("faction")]
+		public string Faction { get; private set; }
+
+		[JsonProperty("team")]
+		public int Team { get; private set; }
+
+		[JsonProperty("spawnpoint")]
+		public int Spawnpoint { get; private set; }
+
+		[JsonProperty("isadmin")]
+		public bool IsAdmin { get; private set; }
+
+		[JsonProperty("isspectator")]
+		public bool IsSpectator { get; private set; }
+
+		[JsonProperty("isbot")]
+		public bool IsBot { get; private set; }
 	}
 }
