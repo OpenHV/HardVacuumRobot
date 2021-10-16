@@ -28,14 +28,14 @@ namespace HardVacuumRobot
 					return;
 
 				var filePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
-				System.Console.WriteLine($"Parsing attachment {attachment.Filename}");
+				Console.WriteLine($"Parsing attachment {attachment.Filename}");
 				var yaml = "";
 
 				try
 				{
 					using var webClient = new WebClient();
 					webClient.DownloadFile(attachment.Url, filePath);
-					System.Console.WriteLine($"Downloading to {filePath}");
+					Console.WriteLine($"Downloading to {filePath}");
 
 					var miniYaml = ExtractMetaData(filePath);
 					yaml = Regex.Replace(miniYaml.Replace("\t", "  "), @"@\d+", "");
@@ -64,7 +64,7 @@ namespace HardVacuumRobot
 				catch (Exception e)
 				{
 					Console.WriteLine(e);
-					System.Console.WriteLine(yaml);
+					Console.WriteLine(yaml);
 				}
 			}
 		}
@@ -131,28 +131,28 @@ namespace HardVacuumRobot
 			};
 
 			var playersByTeam = players.GroupBy(x => x.Team).OrderBy(x => x.Key);
-			var teamsCountStr = new List<string>();
-			foreach (var kvp in playersByTeam)
+			var teamNumbers = new List<string>();
+			foreach (var team in playersByTeam)
 			{
-				if (kvp.Key == 0)
+				if (team.Key == 0)
 				{
-					teamsCountStr.AddRange(kvp.Select(_ => "1"));
+					teamNumbers.AddRange(team.Select(_ => "1"));
 
 					fields.Add(new EmbedFieldBuilder
 					{
 						IsInline = true,
 						Name = "No team:",
-						Value = string.Join("\n", kvp.Select(x => $"{x.Name} [{x.FactionName}]"))
+						Value = GetPlayers(team),
 					});
 				}
 				else
 				{
-					teamsCountStr.Add(kvp.Count().ToString());
+					teamNumbers.Add(team.Count().ToString());
 					fields.Add(new EmbedFieldBuilder
 					{
 						IsInline = true,
-						Name = $"Team {kvp.Key}",
-						Value = string.Join("\n", kvp.Select(x => $"{x.Name} [{x.FactionName}]"))
+						Name = $"Team {team.Key}",
+						Value = GetPlayers(team),
 					});
 				}
 			}
@@ -169,7 +169,7 @@ namespace HardVacuumRobot
 			var embed = new EmbedBuilder
 			{
 				Title = "Replay Preview",
-				Description = $"This is a {string.Join("v", teamsCountStr)} game. || {winnerString} ||",
+				Description = $"This is a {string.Join("v", teamNumbers)} game. || {winnerString} ||",
 				Footer = new EmbedFooterBuilder
 				{
 					Text = $"Played {metadata.Root.StartTimeUtc}"
@@ -182,6 +182,19 @@ namespace HardVacuumRobot
 				embed = embed.WithImageUrl($"https://resource.openra.net/maps/{map.Value.Id}/minimap");
 
 			return embed.Build();
+		}
+
+		static string GetPlayers(IGrouping<int, Player> team)
+		{
+			return string.Join("\n", team.Select(p =>
+				!string.IsNullOrEmpty(p.Fingerprint) ? $"{GetPlayer(p.Fingerprint)} [{p.FactionName}]"
+				: $"{p.Name} [{p.FactionName}]"));
+		}
+
+		static string GetPlayer(string fingerprint)
+		{
+			var profile = ForumAuth.GetResponse(fingerprint);
+			return $"{profile.Player.ProfileName}";
 		}
 
 		public class ReplayMetadata

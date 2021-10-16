@@ -60,7 +60,7 @@ namespace HardVacuumRobot
 								.WithColor(color)
 								.WithDescription($"{prefix} server waiting for players.")
 								.WithTitle($"{server.Name}")
-								.WithAuthor(server.Clients.Single(c => c.IsAdmin).Name)
+								.WithAuthor(GetAdmin(server.Clients))
 								.WithUrl(ServerBrowserAddress)
 								.WithTimestamp(DateTime.Now);
 
@@ -71,7 +71,7 @@ namespace HardVacuumRobot
 
 							await channel.SendMessageAsync(embed: embed.Build());
 
-							System.Console.WriteLine($"Adding {server.Name} ({server.Id}) with {server.Players} players to the waiting list.");
+							Console.WriteLine($"Adding {server.Name} ({server.Id}) with {server.Players} players to the waiting list.");
 							WaitingList.Add(server);
 						}
 					}
@@ -84,19 +84,19 @@ namespace HardVacuumRobot
 						if (server.Players == 0)
 						{
 							if (WaitingList.Remove(server))
-								System.Console.WriteLine($"Removing {server.Name} ({server.Id}) with {server.Players} players from waiting list.");
+								Console.WriteLine($"Removing {server.Name} ({server.Id}) with {server.Players} players from waiting list.");
 						}
 
 						if (server.State != (int)ServerState.WaitingPlayers)
 						{
 							if (WaitingList.Remove(server))
-								System.Console.WriteLine($"Removing {server.Name} ({server.Id}) with state {server.State} from waiting list.");
+								Console.WriteLine($"Removing {server.Name} ({server.Id}) with state {server.State} from waiting list.");
 						}
 					}
 
 					var removed = WaitingList.RemoveAll(server => !servers.Contains(server));
 					if (removed > 0)
-						System.Console.WriteLine($"Removing {removed} servers from waiting list as they vanished from the master server.");
+						Console.WriteLine($"Removing {removed} servers from waiting list as they vanished from the master server.");
 
 					await Task.Delay(TimeSpan.FromSeconds(10));
 				}
@@ -106,6 +106,27 @@ namespace HardVacuumRobot
 					await Task.Delay(TimeSpan.FromSeconds(60));
 				}
 			}
+		}
+
+		EmbedAuthorBuilder GetAdmin(List<Client> clients)
+		{
+			var admin = clients.Single(c => c.IsAdmin);
+			var profile = ForumAuth.GetResponse(admin.Fingerprint);
+
+			if (profile == null || profile.Player == null)
+			{
+				return new EmbedAuthorBuilder
+				{
+					Name = admin.Name,
+				};
+			}
+
+			return new EmbedAuthorBuilder
+			{
+				Name = profile.Player.ProfileName,
+				Url = $"{ForumAuth.ProfileAddress}{profile.Player.ProfileID}",
+				IconUrl = profile.Player.Badges.Badge != null ? profile.Player.Badges.Badge.Icon48 : "",
+			};
 		}
 	}
 
