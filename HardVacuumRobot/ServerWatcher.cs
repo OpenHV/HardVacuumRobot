@@ -14,6 +14,8 @@ namespace HardVacuumRobot
 	public class ServerWatcher
 	{
 		readonly string MasterServerAddress = "https://master.openra.net/games?protocol=2&type=json";
+		readonly string ServerBrowserAddress = "https://openhv.github.io/games.html";
+
 		readonly List<Server> WaitingList = new List<Server>();
 		readonly SocketTextChannel channel;
 
@@ -59,6 +61,7 @@ namespace HardVacuumRobot
 								.WithDescription($"{prefix} server waiting for players.")
 								.WithTitle($"{server.Name}")
 								.WithAuthor(server.Clients.Single(c => c.IsAdmin).Name)
+								.WithUrl(ServerBrowserAddress)
 								.WithTimestamp(DateTime.Now);
 
 							if (map != null)
