@@ -51,9 +51,11 @@ namespace HardVacuumRobot
 						{
 							var map = ResourceCenter.GetMap(server.Map);
 
+							var color = server.Protected ? Color.Red : Color.Orange;
+							var prefix = server.Protected ? "Locked" : "Open";
 							var embed = new EmbedBuilder()
-								.WithColor(Color.Orange)
-								.WithDescription($"Join {server.Address}")
+								.WithColor(color)
+								.WithDescription($"{prefix} server waiting for players.")
 								.WithTitle($"{server.Name}")
 								.WithAuthor("Server waiting for players.")
 								.WithTimestamp(DateTime.Now);
