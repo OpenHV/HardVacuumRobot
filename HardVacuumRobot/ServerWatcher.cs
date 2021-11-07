@@ -17,6 +17,7 @@ namespace HardVacuumRobot
 		readonly string ServerBrowserAddress = "https://openhv.github.io/games.html";
 
 		readonly List<Server> WaitingList = new List<Server>();
+		readonly List<Server> PlayingList = new List<Server>();
 		readonly SocketTextChannel channel;
 
 		public ServerWatcher(DiscordSocketClient client)
@@ -44,16 +45,32 @@ namespace HardVacuumRobot
 						if (server.Mod != "hv")
 							continue;
 
-						if (server.MaxPlayers < 2)
+						if (server.Players < 1 || server.MaxPlayers < 2)
 							continue;
 
-						if (server.State != (int)ServerState.WaitingPlayers)
+						if (server.State == (int)ServerState.ShuttingDown)
 							continue;
 
-						if (server.Players > 0 && !WaitingList.Contains(server))
+						if (server.State == (int)ServerState.GameStarted && !PlayingList.Contains(server))
 						{
-							var map = ResourceCenter.GetMap(server.Map);
+							var embed = new EmbedBuilder()
+								.WithColor(Color.Green)
+								.WithDescription($"Game started with {server.Players} players.")
+								.WithTitle($"{server.Name}")
+								.WithAuthor(GetAdmin(server.Clients))
+								.WithUrl(ServerBrowserAddress)
+								.WithTimestamp(DateTime.Now);
 
+							EmbedMap(embed, ResourceCenter.GetMap(server.Map));
+
+							await channel.SendMessageAsync(embed: embed.Build());
+
+							Console.WriteLine($"Adding {server.Name} ({server.Id}) with {server.Players} players to the playing list.");
+							PlayingList.Add(server);
+						}
+
+						if (server.State == (int)ServerState.WaitingPlayers && !WaitingList.Contains(server))
+						{
 							var color = server.Protected ? Color.Red : Color.Orange;
 							var prefix = server.Protected ? "Locked" : "Open";
 							var embed = new EmbedBuilder()
@@ -64,10 +81,7 @@ namespace HardVacuumRobot
 								.WithUrl(ServerBrowserAddress)
 								.WithTimestamp(DateTime.Now);
 
-							if (map != null)
-								embed = embed
-									.WithImageUrl($"https://resource.openra.net/maps/{map.Value.Id}/minimap")
-									.WithFooter($"{map.Value.Title} ({map.Value.Players} players)");
+							EmbedMap(embed, ResourceCenter.GetMap(server.Map));
 
 							await channel.SendMessageAsync(embed: embed.Build());
 
@@ -94,9 +108,13 @@ namespace HardVacuumRobot
 						}
 					}
 
-					var removed = WaitingList.RemoveAll(server => !servers.Contains(server));
-					if (removed > 0)
-						Console.WriteLine($"Removing {removed} servers from waiting list as they vanished from the master server.");
+					var waited = WaitingList.RemoveAll(server => !servers.Contains(server));
+					if (waited > 0)
+						Console.WriteLine($"Removing {waited} servers from waiting list as they vanished from the master server.");
+
+					var played = PlayingList.RemoveAll(server => !servers.Contains(server));
+					if (played > 0)
+						Console.WriteLine($"Removing {played} servers from playing list as they vanished from the master server.");
 
 					await Task.Delay(TimeSpan.FromSeconds(10));
 				}
@@ -104,13 +122,29 @@ namespace HardVacuumRobot
 				{
 					Console.WriteLine(e.Message);
 					await Task.Delay(TimeSpan.FromSeconds(60));
+				} catch (Exception e)
+				{
+					Console.WriteLine(e.StackTrace);
 				}
 			}
 		}
 
+		EmbedBuilder EmbedMap(EmbedBuilder embed, Map? map)
+		{
+			if (map != null)
+				return embed
+					.WithImageUrl($"https://resource.openra.net/maps/{map.Value.Id}/minimap")
+					.WithFooter($"{map.Value.Title} ({map.Value.Players} players)");
+
+			return embed;
+		}
+
 		EmbedAuthorBuilder GetAdmin(List<Client> clients)
 		{
-			var admin = clients.Single(c => c.IsAdmin);
+			var admin = clients.SingleOrDefault(c => c.IsAdmin);
+			if (admin.Equals(default(Client)))
+				return new EmbedAuthorBuilder();
+
 			var profile = ForumAuth.GetResponse(admin.Fingerprint);
 
 			if (profile == null || profile.Player == null)
