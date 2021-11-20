@@ -170,10 +170,7 @@ namespace HardVacuumRobot
 			{
 				Title = "Replay Preview",
 				Description = $"This is a {string.Join("v", teamNumbers)} game. || {winnerString} ||",
-				Footer = new EmbedFooterBuilder
-				{
-					Text = $"Played {metadata.Root.StartTimeUtc}"
-				},
+				Timestamp = metadata.Root.StartTimeUtc,
 				Color = Color.DarkBlue,
 				Fields = fields
 			};
