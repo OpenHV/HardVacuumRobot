@@ -53,9 +53,10 @@ namespace HardVacuumRobot
 
 						if (server.State == (int)ServerState.GameStarted && !PlayingList.Contains(server))
 						{
+
 							var embed = new EmbedBuilder()
 								.WithColor(Color.Green)
-								.WithDescription($"Game started with {server.Players} players.")
+								.WithDescription($"Game started with {server.Players} players: { string.Join(", ", server.Clients.Select(c => c.Name))}")
 								.WithTitle($"{server.Name}")
 								.WithAuthor(GetAdmin(server.Clients))
 								.WithUrl(ServerBrowserAddress)
