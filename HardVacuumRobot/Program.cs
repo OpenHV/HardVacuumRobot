@@ -12,6 +12,8 @@ namespace HardVacuumRobot
 		readonly DiscordSocketClient client;
 
 		CancellationTokenSource cancellationTokenSource;
+		Task watchServers;
+		Task retrieveNewMaps;
 
 		static void Main()
 		{
@@ -52,10 +54,10 @@ namespace HardVacuumRobot
 			var token = cancellationTokenSource.Token;
 
 			var serverWatcher = new ServerWatcher(client);
-			Task.Factory.StartNew(() => serverWatcher.ScanServers(client, token), token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+			watchServers = Task.Factory.StartNew(() => serverWatcher.ScanServers(client, token), token, TaskCreationOptions.None, TaskScheduler.Default);
 
 			var resourceCenter = new ResourceCenter(client);
-			Task.Factory.StartNew(() => resourceCenter.RetrieveNewMaps(client, token), token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+			retrieveNewMaps = Task.Factory.StartNew(() => resourceCenter.RetrieveNewMaps(client, token), token, TaskCreationOptions.None, TaskScheduler.Default);
 
 			return Task.CompletedTask;
 		}
