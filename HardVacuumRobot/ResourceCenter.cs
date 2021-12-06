@@ -32,7 +32,10 @@ namespace HardVacuumRobot
 			while (!token.IsCancellationRequested)
 			{
 				if (discordClient.ConnectionState != ConnectionState.Connected)
+				{
+					await Task.Delay(TimeSpan.FromSeconds(60));
 					continue;
+				}
 
 				try
 				{
