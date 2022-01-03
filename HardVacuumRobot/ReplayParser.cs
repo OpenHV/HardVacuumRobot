@@ -124,9 +124,15 @@ namespace HardVacuumRobot
 				},
 				new EmbedFieldBuilder
 				{
-					IsInline = false,
+					IsInline = true,
 					Name = "Duration:",
 					Value = $"||{metadata.Root.EndTimeUtc - metadata.Root.StartTimeUtc}||"
+				},
+				new EmbedFieldBuilder
+				{
+					IsInline = true,
+					Name = "Outcome:",
+					Value = $"||{GetWinners(players)}||"
 				}
 			};
 
@@ -157,19 +163,10 @@ namespace HardVacuumRobot
 				}
 			}
 
-			var winners =players.Where(x => x.Outcome == "Won").ToArray();
-			string winnerString;
-			if (winners.Length == 0)
-				winnerString = "Winner is unknown.";
-			else if (winners.Length == 1)
-				winnerString = $"Winner is {winners[0].Name}";
-			else
-				winnerString = $"Winners are {string.Join(", ", winners.Select(x => x.Name))}";
-
 			var embed = new EmbedBuilder
 			{
 				Title = "Replay Preview",
-				Description = $"This is a {string.Join("v", teamNumbers)} game. || {winnerString} ||",
+				Description = $"This is a {string.Join("v", teamNumbers)} game.",
 				Timestamp = metadata.Root.StartTimeUtc,
 				Color = Color.DarkBlue,
 				Fields = fields
@@ -192,6 +189,20 @@ namespace HardVacuumRobot
 		{
 			var profile = ForumAuth.GetResponse(fingerprint);
 			return $"{profile.Player.ProfileName}";
+		}
+
+		static string GetWinners(List<Player> players)
+		{
+			var winners = players.Where(x => x.Outcome == "Won").ToArray();
+			string winnerString;
+			if (winners.Length == 0)
+				winnerString = "Winner is unknown.";
+			else if (winners.Length == 1)
+				winnerString = $"Winner is {winners[0].Name}";
+			else
+				winnerString = $"Winners are {string.Join(", ", winners.Select(x => x.Name))}";
+
+			return winnerString;
 		}
 
 		public class ReplayMetadata
