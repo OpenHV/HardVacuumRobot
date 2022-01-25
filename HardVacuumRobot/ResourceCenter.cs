@@ -31,12 +31,6 @@ namespace HardVacuumRobot
 
 			while (!token.IsCancellationRequested)
 			{
-				if (discordClient.ConnectionState != ConnectionState.Connected)
-				{
-					await Task.Delay(TimeSpan.FromSeconds(60));
-					continue;
-				}
-
 				try
 				{
 					using var webClient = new WebClient();
@@ -70,7 +64,7 @@ namespace HardVacuumRobot
 				catch (WebException e)
 				{
 					Console.WriteLine(e.Message);
-					await Task.Delay(TimeSpan.FromHours(1));
+					await Task.Delay(TimeSpan.FromSeconds(60));
 				}
 			}
 		}
