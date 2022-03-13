@@ -22,7 +22,15 @@ namespace HardVacuumRobot
 
 		public Program()
 		{
-			client = new DiscordSocketClient();
+			var config = new DiscordSocketConfig()
+			{
+				GatewayIntents = GatewayIntents.Guilds
+					| GatewayIntents.GuildIntegrations
+					| GatewayIntents.GuildMessages
+					| GatewayIntents.DirectMessages
+			};
+
+			client = new DiscordSocketClient(config);
 			client.Log += LogAsync;
 			client.Ready += ReadyAsync;
 			client.MessageReceived += MessageReceivedAsync;
