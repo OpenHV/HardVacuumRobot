@@ -140,11 +140,10 @@ namespace HardVacuumRobot
 		EmbedAuthorBuilder GetAdmin(List<Client> clients)
 		{
 			var admin = clients.SingleOrDefault(c => c.IsAdmin);
-			if (admin.Equals(default(Client)))
+			if (admin.Equals(default(Client)) || string.IsNullOrEmpty(admin.Name))
 				return new EmbedAuthorBuilder();
 
 			var profile = ForumAuth.GetResponse(admin.Fingerprint);
-
 			if (profile == null || profile.Player == null)
 			{
 				return new EmbedAuthorBuilder
