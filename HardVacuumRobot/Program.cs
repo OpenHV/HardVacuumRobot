@@ -46,6 +46,12 @@ namespace HardVacuumRobot
 
 		Task LogAsync(LogMessage log)
 		{
+			if (log.Exception is GatewayReconnectException)
+				Console.WriteLine(log.Message);
+
+			if (log.Exception is WebSocketException)
+				Console.WriteLine(log.Message);
+
 			Console.WriteLine(log.ToString());
 			return Task.CompletedTask;
 		}
