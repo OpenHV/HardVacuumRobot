@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Configuration;
+using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Discord;
@@ -34,6 +35,7 @@ namespace HardVacuumRobot
 			client.Log += LogAsync;
 			client.Ready += ReadyAsync;
 			client.MessageReceived += MessageReceivedAsync;
+			client.Disconnected += DisconnectedAsync;
 		}
 
 		public async Task MainAsync()
@@ -59,7 +61,12 @@ namespace HardVacuumRobot
 		Task ReadyAsync()
 		{
 			Console.WriteLine($"{client.CurrentUser} is connected!");
+			RestartServices();
+			return Task.CompletedTask;
+		}
 
+		void RestartServices()
+		{
 			if (cancellationTokenSource != null)
 				cancellationTokenSource.Cancel();
 			else
@@ -72,8 +79,6 @@ namespace HardVacuumRobot
 
 			var resourceCenter = new ResourceCenter(client);
 			retrieveNewMaps = Task.Factory.StartNew(() => resourceCenter.RetrieveNewMaps(client, token), token, TaskCreationOptions.None, TaskScheduler.Default);
-
-			return Task.CompletedTask;
 		}
 
 		Task MessageReceivedAsync(SocketMessage message)
@@ -83,6 +88,13 @@ namespace HardVacuumRobot
 				return Task.CompletedTask;
 
 			ReplayParser.ScanAttachment(message);
+			return Task.CompletedTask;
+		}
+
+		Task DisconnectedAsync(Exception exception)
+		{
+			Console.WriteLine("Restarting services.");
+			RestartServices();
 			return Task.CompletedTask;
 		}
 	}
