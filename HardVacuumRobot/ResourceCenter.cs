@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Net;
+using System.Net.Http;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
@@ -13,53 +13,59 @@ namespace HardVacuumRobot
 {
 	public class ResourceCenter
 	{
+		public Task CheckMaps;
+
 		const string ResourceServerAddress = "https://resource.openra.net/map/hash/";
 		const string LastMapAddress = "https://resource.openra.net/map/lastmap/";
 
-		readonly SocketTextChannel channel;
+		SocketTextChannel channel;
 		string lastHash = "";
 
-		public ResourceCenter(DiscordSocketClient client)
+		public void Observe(DiscordSocketClient discordClient)
 		{
-			var server = client.GetGuild(ulong.Parse(ConfigurationManager.AppSettings["Server"]));
+			var server = discordClient.GetGuild(ulong.Parse(ConfigurationManager.AppSettings["Server"]));
 			channel = server.GetTextChannel(ulong.Parse(ConfigurationManager.AppSettings["DevelopmentChannel"]));
+			CheckMaps = Task.Factory.StartNew(() => RetrieveNewMaps(discordClient));
 		}
 
-		public async Task RetrieveNewMaps(DiscordSocketClient discordClient, CancellationToken token)
+		public async Task RetrieveNewMaps(DiscordSocketClient discordClient)
 		{
 			Console.WriteLine("Started looking for new maps.");
 
-			while (!token.IsCancellationRequested)
+			while (true)
 			{
 				try
 				{
-					using var webClient = new WebClient();
-					var json = webClient.DownloadString(LastMapAddress);
-					var maps = JsonConvert.DeserializeObject<List<Map>>(json);
-					foreach (var map in maps)
+					using (var httpClient = new HttpClient())
 					{
-						if (lastHash == map.Hash)
-							continue;
+						var response = await httpClient.GetAsync(LastMapAddress);
+						var json = await response.Content.ReadAsStringAsync();
+						var maps = JsonConvert.DeserializeObject<List<Map>>(json);
+						foreach (var map in maps)
+						{
+							if (lastHash == map.Hash)
+								continue;
 
-						if (map.Mod != "hv")
-							continue;
+							if (map.Mod != "hv")
+								continue;
 
-						var embed = new EmbedBuilder()
-							.WithColor(Color.Blue)
-							.WithDescription(map.Info)
-							.WithTitle(map.Title)
-							.WithUrl($"https://resource.openra.net/maps/{map.Id}")
-							.WithAuthor("A new map has been uploaded.")
-							.WithFooter($"by {map.Author}")
-							.WithImageUrl($"https://resource.openra.net/maps/{map.Id}/minimap")
-							.WithTimestamp(DateTime.Now);
+							var embed = new EmbedBuilder()
+								.WithColor(Color.Blue)
+								.WithDescription(map.Info)
+								.WithTitle(map.Title)
+								.WithUrl($"https://resource.openra.net/maps/{map.Id}")
+								.WithAuthor("A new map has been uploaded.")
+								.WithFooter($"by {map.Author}")
+								.WithImageUrl($"https://resource.openra.net/maps/{map.Id}/minimap")
+								.WithTimestamp(DateTime.Now);
 
-						await channel.SendMessageAsync(embed: embed.Build());
+							await channel.SendMessageAsync(embed: embed.Build());
 
-						lastHash = map.Hash;
+							lastHash = map.Hash;
+						}
+
+						await Task.Delay(TimeSpan.FromHours(1));
 					}
-
-					await Task.Delay(TimeSpan.FromHours(1));
 				}
 				catch (WebException e)
 				{
@@ -69,12 +75,16 @@ namespace HardVacuumRobot
 			}
 		}
 
-		public static Map? GetMap(string hash)
+		public static async Task<Map?> GetMap(string hash)
 		{
 			try
 			{
-				var json = new WebClient().DownloadString($"{ResourceServerAddress}{hash}");
-				return JsonConvert.DeserializeObject<List<Map>>(json).First();
+				using (var httpClient = new HttpClient())
+				{
+					var response = await httpClient.GetAsync($"{ResourceServerAddress}{hash}");
+					var json = await response.Content.ReadAsStringAsync();
+					return JsonConvert.DeserializeObject<List<Map>>(json).First();
+				}
 			}
 			catch (Exception e)
 			{

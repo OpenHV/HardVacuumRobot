@@ -1,11 +1,11 @@
+using Discord;
+using Discord.WebSocket;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Net;
-using Discord;
-using Discord.WebSocket;
-using Newtonsoft.Json;
-using System.Threading;
+using System.Net.Http;
 using System.Threading.Tasks;
 using System.Linq;
 
@@ -13,108 +13,117 @@ namespace HardVacuumRobot
 {
 	public class ServerWatcher
 	{
+		public Task WatchServers;
+
 		readonly string MasterServerAddress = "https://master.openra.net/games?protocol=2&type=json";
 		readonly string ServerBrowserAddress = "https://openhv.github.io/games.html";
 
 		readonly List<Server> WaitingList = new List<Server>();
 		readonly List<Server> PlayingList = new List<Server>();
-		readonly SocketTextChannel channel;
 
-		public ServerWatcher(DiscordSocketClient client)
+		SocketTextChannel channel;
+		DateTime lastScan;
+
+		public void Start(DiscordSocketClient discordClient)
 		{
-			var server = client.GetGuild(ulong.Parse(ConfigurationManager.AppSettings["Server"]));
+			var server = discordClient.GetGuild(ulong.Parse(ConfigurationManager.AppSettings["Server"]));
 			channel = server.GetTextChannel(ulong.Parse(ConfigurationManager.AppSettings["LobbyChannel"]));
+			WatchServers = Task.Factory.StartNew(() => ScanServers(discordClient));
 		}
 
-		public async Task ScanServers(DiscordSocketClient discordClient, CancellationToken token)
+		async Task ScanServers(DiscordSocketClient discordClient)
 		{
 			Console.WriteLine("Started scanning for servers.");
 
-			while (!token.IsCancellationRequested)
+			while (true)
 			{
 				try
 				{
-					using var webClient = new WebClient();
-					var json = webClient.DownloadString(MasterServerAddress);
-					var servers = JsonConvert.DeserializeObject<List<Server>>(json);
-					foreach (var server in servers)
+					using (var httpClient = new HttpClient())
 					{
-						if (server.Mod != "hv")
-							continue;
-
-						if (server.Players < 1 || server.MaxPlayers < 2)
-							continue;
-
-						if (server.State == (int)ServerState.ShuttingDown)
-							continue;
-
-						if (server.State == (int)ServerState.GameStarted && !PlayingList.Contains(server))
+						var response = await httpClient.GetAsync(MasterServerAddress);
+						var json = await response.Content.ReadAsStringAsync();
+						var servers = JsonConvert.DeserializeObject<List<Server>>(json);
+						lastScan = DateTime.Now;
+						foreach (var server in servers)
 						{
+							if (server.Mod != "hv")
+								continue;
 
-							var embed = new EmbedBuilder()
-								.WithColor(Color.Green)
-								.WithDescription($"Game started with {server.Players} players: { string.Join(", ", server.Clients.Select(c => c.Name))}")
-								.WithTitle($"{server.Name}")
-								.WithAuthor(GetAdmin(server.Clients))
-								.WithUrl(ServerBrowserAddress)
-								.WithTimestamp(DateTime.Now);
+							if (server.Players < 1 || server.MaxPlayers < 2)
+								continue;
 
-							EmbedMap(embed, ResourceCenter.GetMap(server.Map));
+							if (server.State == (int)ServerState.ShuttingDown)
+								continue;
 
-							await channel.SendMessageAsync(embed: embed.Build());
+							if (server.State == (int)ServerState.GameStarted && !PlayingList.Contains(server))
+							{
 
-							Console.WriteLine($"Adding {server.Name} ({server.Id}) with {server.Players} players to the playing list.");
-							PlayingList.Add(server);
+								var embed = new EmbedBuilder()
+									.WithColor(Color.Green)
+									.WithDescription($"Game started with {server.Players} players: { string.Join(", ", server.Clients.Select(c => c.Name))}")
+									.WithTitle($"{server.Name}")
+									.WithAuthor(await GetAdmin(server.Clients))
+									.WithUrl(ServerBrowserAddress)
+									.WithTimestamp(DateTime.Now);
+
+								EmbedMap(embed, await ResourceCenter.GetMap(server.Map));
+
+								await channel.SendMessageAsync(embed: embed.Build());
+
+								Console.WriteLine($"Adding {server.Name} ({server.Id}) with {server.Players} players to the playing list.");
+								PlayingList.Add(server);
+							}
+
+							if (server.State == (int)ServerState.WaitingPlayers && !WaitingList.Contains(server))
+							{
+								var color = server.Protected ? Color.Red : Color.Orange;
+								var prefix = server.Protected ? "Locked" : "Open";
+								var embed = new EmbedBuilder()
+									.WithColor(color)
+									.WithDescription($"{prefix} server waiting for players.")
+									.WithTitle($"{server.Name}")
+									.WithAuthor(await GetAdmin(server.Clients))
+									.WithUrl(ServerBrowserAddress)
+									.WithTimestamp(DateTime.Now);
+
+								EmbedMap(embed, await ResourceCenter.GetMap(server.Map));
+
+								await channel.SendMessageAsync(embed: embed.Build());
+
+								Console.WriteLine($"Adding {server.Name} ({server.Id}) with {server.Players} players to the waiting list.");
+								WaitingList.Add(server);
+							}
 						}
 
-						if (server.State == (int)ServerState.WaitingPlayers && !WaitingList.Contains(server))
+						foreach(var server in servers)
 						{
-							var color = server.Protected ? Color.Red : Color.Orange;
-							var prefix = server.Protected ? "Locked" : "Open";
-							var embed = new EmbedBuilder()
-								.WithColor(color)
-								.WithDescription($"{prefix} server waiting for players.")
-								.WithTitle($"{server.Name}")
-								.WithAuthor(GetAdmin(server.Clients))
-								.WithUrl(ServerBrowserAddress)
-								.WithTimestamp(DateTime.Now);
+							if (!WaitingList.Contains(server))
+								continue;
 
-							EmbedMap(embed, ResourceCenter.GetMap(server.Map));
+							if (server.Players == 0)
+							{
+								if (WaitingList.Remove(server))
+									Console.WriteLine($"Removing {server.Name} ({server.Id}) with {server.Players} players from waiting list.");
+							}
 
-							await channel.SendMessageAsync(embed: embed.Build());
-
-							Console.WriteLine($"Adding {server.Name} ({server.Id}) with {server.Players} players to the waiting list.");
-							WaitingList.Add(server);
+							if (server.State != (int)ServerState.WaitingPlayers)
+							{
+								if (WaitingList.Remove(server))
+									Console.WriteLine($"Removing {server.Name} ({server.Id}) with state {server.State} from waiting list.");
+							}
 						}
+
+						var waited = WaitingList.RemoveAll(server => !servers.Contains(server));
+						if (waited > 0)
+							Console.WriteLine($"Removing {waited} servers from waiting list as they vanished from the master server.");
+
+						var played = PlayingList.RemoveAll(server => !servers.Contains(server));
+						if (played > 0)
+							Console.WriteLine($"Removing {played} servers from playing list as they vanished from the master server.");
+
+						await Task.Delay(TimeSpan.FromSeconds(10));
 					}
-
-					foreach(var server in servers)
-					{
-						if (!WaitingList.Contains(server))
-							continue;
-
-						if (server.Players == 0)
-						{
-							if (WaitingList.Remove(server))
-								Console.WriteLine($"Removing {server.Name} ({server.Id}) with {server.Players} players from waiting list.");
-						}
-
-						if (server.State != (int)ServerState.WaitingPlayers)
-						{
-							if (WaitingList.Remove(server))
-								Console.WriteLine($"Removing {server.Name} ({server.Id}) with state {server.State} from waiting list.");
-						}
-					}
-
-					var waited = WaitingList.RemoveAll(server => !servers.Contains(server));
-					if (waited > 0)
-						Console.WriteLine($"Removing {waited} servers from waiting list as they vanished from the master server.");
-
-					var played = PlayingList.RemoveAll(server => !servers.Contains(server));
-					if (played > 0)
-						Console.WriteLine($"Removing {played} servers from playing list as they vanished from the master server.");
-
-					await Task.Delay(TimeSpan.FromSeconds(10));
 				}
 				catch (WebException e)
 				{
@@ -127,6 +136,11 @@ namespace HardVacuumRobot
 			}
 		}
 
+		public TimeSpan LastSuccessfulScan()
+		{
+			return lastScan - DateTime.Now;
+		}
+
 		EmbedBuilder EmbedMap(EmbedBuilder embed, Map? map)
 		{
 			if (map != null)
@@ -137,13 +151,13 @@ namespace HardVacuumRobot
 			return embed;
 		}
 
-		EmbedAuthorBuilder GetAdmin(List<Client> clients)
+		async Task<EmbedAuthorBuilder> GetAdmin(List<Client> clients)
 		{
 			var admin = clients.SingleOrDefault(c => c.IsAdmin);
 			if (admin.Equals(default(Client)) || string.IsNullOrEmpty(admin.Name))
 				return new EmbedAuthorBuilder();
 
-			var profile = ForumAuth.GetResponse(admin.Fingerprint);
+			var profile = await ForumAuth.GetResponse(admin.Fingerprint);
 			if (profile == null || profile.Player == null)
 			{
 				return new EmbedAuthorBuilder

@@ -4,7 +4,8 @@ using System.IO;
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Net;
+using System.Threading.Tasks;
+using System.Net.Http;
 using Discord;
 using Discord.WebSocket;
 using YamlDotNet.Serialization;
@@ -17,7 +18,7 @@ namespace HardVacuumRobot
 	{
 		const int MetaEndMarker = -2;
 
-		public static void ScanAttachment(SocketMessage message)
+		public static async void ScanAttachment(SocketMessage message)
 		{
 			if (message == null || message.Attachments == null)
 				return;
@@ -33,33 +34,41 @@ namespace HardVacuumRobot
 
 				try
 				{
-					using var webClient = new WebClient();
-					webClient.DownloadFile(attachment.Url, filePath);
-					Console.WriteLine($"Downloading to {filePath}");
-
-					var miniYaml = ExtractMetaData(filePath);
-					yaml = Regex.Replace(miniYaml.Replace("\t", "  "), @"@\d+", "");
-					yaml = yaml.Replace("{DEV_VERSION}", "development");
-
-					var deserializer = new DeserializerBuilder()
-						.WithTypeConverter(new DateTimeConverter(DateTimeKind.Utc, CultureInfo.InvariantCulture, new[] { "yyyy-MM-dd HH-mm-ss" }))
-						.Build();
-
-					var splitYaml = yaml.Split("Player:");
-					var rootYaml = splitYaml[0];
-					var metadata = deserializer.Deserialize<ReplayMetadata>(rootYaml);
-					var players = new List<Player>();
-					foreach (var playerYaml in splitYaml.Skip(1))
+					using (var httpClient = new HttpClient())
 					{
-						var player = deserializer.Deserialize<Player>(playerYaml);
-						players.Add(player);
+						Console.WriteLine($"Downloading to {filePath}");
+
+						using (var stream = await httpClient.GetStreamAsync(attachment.Url))
+						{
+							using (var fileStream = new FileStream(filePath, FileMode.Create))
+							{
+								await stream.CopyToAsync(fileStream);
+								var miniYaml = ExtractMetaData(fileStream);
+								yaml = Regex.Replace(miniYaml.Replace("\t", "  "), @"@\d+", "");
+								yaml = yaml.Replace("{DEV_VERSION}", "development");
+
+								var deserializer = new DeserializerBuilder()
+									.WithTypeConverter(new DateTimeConverter(DateTimeKind.Utc, CultureInfo.InvariantCulture, new[] { "yyyy-MM-dd HH-mm-ss" }))
+									.Build();
+
+								var splitYaml = yaml.Split("Player:");
+								var rootYaml = splitYaml[0];
+								var metadata = deserializer.Deserialize<ReplayMetadata>(rootYaml);
+								var players = new List<Player>();
+								foreach (var playerYaml in splitYaml.Skip(1))
+								{
+									var player = deserializer.Deserialize<Player>(playerYaml);
+									players.Add(player);
+								}
+
+								var embed = await CreateEmbed(metadata, players);
+								if (embed != null)
+									await message.Channel.SendMessageAsync(embed: embed);
+
+								File.Delete(filePath);
+							}
+						}
 					}
-
-					var embed = CreateEmbed(metadata, players);
-					if (embed != null)
-						message.Channel.SendMessageAsync(embed: embed);
-
-					File.Delete(filePath);
 				}
 				catch (Exception e)
 				{
@@ -69,11 +78,10 @@ namespace HardVacuumRobot
 			}
 		}
 
-		static string ExtractMetaData(string filePath)
+		static string ExtractMetaData(FileStream fileStream)
 		{
 			try
 			{
-				using var fileStream = new FileStream(filePath, FileMode.Open);
 				if (!fileStream.CanSeek)
 					throw new InvalidOperationException("Can't seek stream.");
 
@@ -105,9 +113,9 @@ namespace HardVacuumRobot
 			return null;
 		}
 
-		static Embed CreateEmbed(ReplayMetadata metadata, List<Player> players)
+		static async Task<Embed> CreateEmbed(ReplayMetadata metadata, List<Player> players)
 		{
-			var map = ResourceCenter.GetMap(metadata.Root.MapUid);
+			var map = await ResourceCenter.GetMap(metadata.Root.MapUid);
 			var fields = new List<EmbedFieldBuilder>
 			{
 				new EmbedFieldBuilder
@@ -187,7 +195,7 @@ namespace HardVacuumRobot
 
 		static string GetPlayer(string fingerprint)
 		{
-			var profile = ForumAuth.GetResponse(fingerprint);
+			var profile = ForumAuth.GetResponse(fingerprint).Result;
 			return $"{profile.Player.ProfileName}";
 		}
 

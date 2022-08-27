@@ -1,45 +1,48 @@
-﻿using System;
+﻿using Discord;
+using Discord.WebSocket;
+using System;
 using System.Configuration;
-using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
-using Discord;
-using Discord.WebSocket;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace HardVacuumRobot
 {
-	class Program
+	public class Program
 	{
-		readonly DiscordSocketClient client;
-
-		CancellationTokenSource cancellationTokenSource;
-		Task watchServers;
-		Task retrieveNewMaps;
+		public static readonly IServiceProvider ServiceProvider = CreateProvider();
 
 		static void Main()
 		{
 			new Program().MainAsync().GetAwaiter().GetResult();
 		}
 
-		public Program()
+		static IServiceProvider CreateProvider()
 		{
 			var config = new DiscordSocketConfig()
 			{
 				GatewayIntents = GatewayIntents.Guilds
 					| GatewayIntents.GuildIntegrations
 					| GatewayIntents.GuildMessages
-					| GatewayIntents.DirectMessages
 			};
 
-			client = new DiscordSocketClient(config);
+			var collection = new ServiceCollection()
+				.AddSingleton(config)
+				.AddSingleton<DiscordSocketClient>()
+				.AddSingleton<ServerWatcher>()
+				.AddSingleton<ResourceCenter>();
+
+			return collection.BuildServiceProvider();
+		}
+
+		async Task MainAsync()
+		{
+			var client = ServiceProvider.GetRequiredService<DiscordSocketClient>();
+
 			client.Log += LogAsync;
 			client.Ready += ReadyAsync;
 			client.MessageReceived += MessageReceivedAsync;
-			client.Disconnected += DisconnectedAsync;
-		}
 
-		public async Task MainAsync()
-		{
 			await client.LoginAsync(TokenType.Bot, ConfigurationManager.AppSettings["DiscordBotToken"]);
 			await client.StartAsync();
 
@@ -48,53 +51,29 @@ namespace HardVacuumRobot
 
 		Task LogAsync(LogMessage log)
 		{
-			if (log.Exception is GatewayReconnectException)
-				Console.WriteLine(log.Message);
-
-			if (log.Exception is WebSocketException)
-				Console.WriteLine(log.Message);
-
-			Console.WriteLine(log.ToString());
+			Console.WriteLine(log.Message);
 			return Task.CompletedTask;
 		}
 
 		Task ReadyAsync()
 		{
+			var client = ServiceProvider.GetRequiredService<DiscordSocketClient>();
 			Console.WriteLine($"{client.CurrentUser} is connected!");
-			RestartServices();
+
+			ServiceProvider.GetRequiredService<ServerWatcher>().Start(client);
+			ServiceProvider.GetRequiredService<ResourceCenter>().Observe(client);
+
 			return Task.CompletedTask;
-		}
-
-		void RestartServices()
-		{
-			if (cancellationTokenSource != null)
-				cancellationTokenSource.Cancel();
-			else
-				cancellationTokenSource = new CancellationTokenSource();
-
-			var token = cancellationTokenSource.Token;
-
-			var serverWatcher = new ServerWatcher(client);
-			watchServers = Task.Factory.StartNew(() => serverWatcher.ScanServers(client, token), token, TaskCreationOptions.None, TaskScheduler.Default);
-
-			var resourceCenter = new ResourceCenter(client);
-			retrieveNewMaps = Task.Factory.StartNew(() => resourceCenter.RetrieveNewMaps(client, token), token, TaskCreationOptions.None, TaskScheduler.Default);
 		}
 
 		Task MessageReceivedAsync(SocketMessage message)
 		{
 			// The bot should never respond to itself.
+			var client = ServiceProvider.GetRequiredService<DiscordSocketClient>();
 			if (message.Author.Id == client.CurrentUser.Id)
 				return Task.CompletedTask;
 
 			ReplayParser.ScanAttachment(message);
-			return Task.CompletedTask;
-		}
-
-		Task DisconnectedAsync(Exception exception)
-		{
-			Console.WriteLine("Restarting services.");
-			RestartServices();
 			return Task.CompletedTask;
 		}
 	}

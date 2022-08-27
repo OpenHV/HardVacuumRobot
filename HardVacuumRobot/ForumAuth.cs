@@ -1,6 +1,7 @@
 using System;
-using System.Net;
+using System.Net.Http;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using YamlDotNet.Serialization;
 
 namespace HardVacuumRobot
@@ -10,28 +11,32 @@ namespace HardVacuumRobot
 		static readonly string InfoAddress = "https://forum.openra.net/openra/info/";
 		public static readonly string ProfileAddress = "https://forum.openra.net/memberlist.php?mode=viewprofile&u=";
 
-		public static Profile GetResponse(string fingerprint)
+		public static async Task<Profile> GetResponse(string fingerprint)
 		{
 			if (string.IsNullOrEmpty(fingerprint))
 				return null;
 
-			var yaml = "";
+			var miniYaml = "";
 			try
 			{
-				var miniYaml = new WebClient().DownloadString($"{InfoAddress}{fingerprint}");
-				var invalidYaml = Regex.Replace(miniYaml.Replace("\t", "  "), @"@\d+", "");
+				using (var httpClient = new HttpClient())
+				{
+					var response = await httpClient.GetAsync($"{InfoAddress}{fingerprint}");
+					miniYaml = await response.Content.ReadAsStringAsync();
+					var yaml = Regex.Replace(miniYaml.Replace("\t", "  "), @"@\d+", "");
 
-				var deserializer = new DeserializerBuilder().IgnoreUnmatchedProperties().Build();
-				var splitYaml = yaml.Split("Badges:");
-				var rootYaml = splitYaml[0];
+					var deserializer = new DeserializerBuilder().IgnoreUnmatchedProperties().Build();
+					var splitYaml = yaml.Split("Badges:");
+					var rootYaml = splitYaml[0];
 
-				var profile = deserializer.Deserialize<Profile>(yaml);
-				return profile;
+					var profile = deserializer.Deserialize<Profile>(yaml);
+					return profile;
+				}
 			}
 			catch (Exception e)
 			{
 				Console.WriteLine(e);
-				Console.WriteLine(yaml);
+				Console.WriteLine(miniYaml);
 			}
 
 			return null;
