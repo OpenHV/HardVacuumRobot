@@ -20,7 +20,6 @@ namespace HardVacuumRobot
 			{
 				var miniYaml = new WebClient().DownloadString($"{InfoAddress}{fingerprint}");
 				var invalidYaml = Regex.Replace(miniYaml.Replace("\t", "  "), @"@\d+", "");
-				yaml = invalidYaml.Replace("Height:", "Height: "); // https://github.com/OpenRA/openrauseraccounts/pull/55
 
 				var deserializer = new DeserializerBuilder().IgnoreUnmatchedProperties().Build();
 				var splitYaml = yaml.Split("Badges:");
