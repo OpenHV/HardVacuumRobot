@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Net;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Linq;
 
@@ -28,7 +29,7 @@ namespace HardVacuumRobot
 		{
 			var server = discordClient.GetGuild(ulong.Parse(ConfigurationManager.AppSettings["Server"]));
 			channel = server.GetTextChannel(ulong.Parse(ConfigurationManager.AppSettings["LobbyChannel"]));
-			WatchServers = Task.Factory.StartNew(() => ScanServers(discordClient));
+			WatchServers = Task.Factory.StartNew(() => ScanServers(discordClient), CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 		}
 
 		async Task ScanServers(DiscordSocketClient discordClient)
@@ -138,7 +139,7 @@ namespace HardVacuumRobot
 
 		public TimeSpan LastSuccessfulScan()
 		{
-			return lastScan - DateTime.Now;
+			return DateTime.Now - lastScan;
 		}
 
 		EmbedBuilder EmbedMap(EmbedBuilder embed, Map? map)

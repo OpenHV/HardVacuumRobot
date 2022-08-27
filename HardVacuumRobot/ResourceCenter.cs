@@ -4,6 +4,7 @@ using System.Configuration;
 using System.Net;
 using System.Net.Http;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
@@ -20,12 +21,13 @@ namespace HardVacuumRobot
 
 		SocketTextChannel channel;
 		string lastHash = "";
+		DateTime lastScan;
 
 		public void Observe(DiscordSocketClient discordClient)
 		{
 			var server = discordClient.GetGuild(ulong.Parse(ConfigurationManager.AppSettings["Server"]));
 			channel = server.GetTextChannel(ulong.Parse(ConfigurationManager.AppSettings["DevelopmentChannel"]));
-			CheckMaps = Task.Factory.StartNew(() => RetrieveNewMaps(discordClient));
+			CheckMaps = Task.Factory.StartNew(() => RetrieveNewMaps(discordClient), CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 		}
 
 		public async Task RetrieveNewMaps(DiscordSocketClient discordClient)
@@ -38,6 +40,7 @@ namespace HardVacuumRobot
 				{
 					using (var httpClient = new HttpClient())
 					{
+						lastScan = DateTime.Now;
 						var response = await httpClient.GetAsync(LastMapAddress);
 						var json = await response.Content.ReadAsStringAsync();
 						var maps = JsonConvert.DeserializeObject<List<Map>>(json);
@@ -73,6 +76,11 @@ namespace HardVacuumRobot
 					await Task.Delay(TimeSpan.FromSeconds(60));
 				}
 			}
+		}
+
+		public TimeSpan LastSuccessfulScan()
+		{
+			return DateTime.Now - lastScan;
 		}
 
 		public static async Task<Map?> GetMap(string hash)
