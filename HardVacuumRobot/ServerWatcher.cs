@@ -17,7 +17,6 @@ namespace HardVacuumRobot
 		public Task WatchServers;
 
 		readonly string MasterServerAddress = "https://master.openra.net/games?protocol=2&type=json";
-		readonly string ServerBrowserAddress = "https://openhv.github.io/games.html";
 
 		readonly List<Server> WaitingList = new();
 		readonly List<Server> PlayingList = new();
@@ -64,7 +63,6 @@ namespace HardVacuumRobot
 								.WithDescription($"Game started with {server.Players} players: { string.Join(", ", server.Clients.Select(c => c.Name))}")
 								.WithTitle($"{server.Name}")
 								.WithAuthor(await GetAdmin(server.Clients))
-								.WithUrl(ServerBrowserAddress)
 								.WithTimestamp(DateTime.Now);
 
 							EmbedMap(embed, await ResourceCenter.GetMap(server.Map));
@@ -79,13 +77,14 @@ namespace HardVacuumRobot
 						{
 							var color = server.Protected ? Color.Red : Color.Orange;
 							var prefix = server.Protected ? "Locked" : "Open";
-							var locked = server.Protected ? "🔒" : "";
+							var icon = server.Protected ? "🔒" : "";
+							var status = $"{prefix} server waiting for players.";
+							var link = $"<openra-{server.Mod}-{server.Version}://{server.Address}>";
 							var embed = new EmbedBuilder()
 								.WithColor(color)
-								.WithDescription($"{prefix} server waiting for players.")
-								.WithTitle($"{locked} {server.Name}")
+								.WithTitle($"{icon} {server.Name}")
+								.WithDescription(status + Environment.NewLine + link)
 								.WithAuthor(await GetAdmin(server.Clients))
-								.WithUrl(ServerBrowserAddress)
 								.WithTimestamp(DateTime.Now);
 
 							EmbedMap(embed, await ResourceCenter.GetMap(server.Map));
