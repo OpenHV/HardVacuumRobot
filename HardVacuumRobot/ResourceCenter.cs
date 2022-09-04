@@ -58,6 +58,7 @@ namespace HardVacuumRobot
 							.WithTitle(map.Title)
 							.WithUrl($"https://resource.openra.net/maps/{map.Id}")
 							.WithAuthor(GetAuthor(map.Author))
+							.WithFooter($"Revision {map.Revision}")
 							.WithImageUrl($"https://resource.openra.net/maps/{map.Id}/minimap")
 							.WithTimestamp(DateTime.Now);
 
