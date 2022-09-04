@@ -18,6 +18,7 @@ namespace HardVacuumRobot
 
 		const string ResourceServerAddress = "https://resource.openra.net/map/hash/";
 		const string LastMapAddress = "https://resource.openra.net/map/lastmap/";
+		const string MapAuthorAddress = "https://resource.openra.net/maps/author/";
 
 		SocketTextChannel channel;
 		string lastHash = "";
@@ -56,7 +57,7 @@ namespace HardVacuumRobot
 							.WithDescription(map.Info)
 							.WithTitle(map.Title)
 							.WithUrl($"https://resource.openra.net/maps/{map.Id}")
-							.WithAuthor(map.Author)
+							.WithAuthor(GetAuthor(map.Author))
 							.WithImageUrl($"https://resource.openra.net/maps/{map.Id}/minimap")
 							.WithTimestamp(DateTime.Now);
 
@@ -74,6 +75,15 @@ namespace HardVacuumRobot
 					await Task.Delay(TimeSpan.FromSeconds(60));
 				}
 			}
+		}
+
+		static EmbedAuthorBuilder GetAuthor(string author)
+		{
+			return new EmbedAuthorBuilder
+			{
+				Name = author,
+				Url = $"{MapAuthorAddress}{author}",
+			};
 		}
 
 		public TimeSpan LastSuccessfulScan()
