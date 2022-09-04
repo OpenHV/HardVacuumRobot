@@ -41,7 +41,7 @@ namespace HardVacuumRobot
 
 			client.Log += LogAsync;
 			client.Ready += StartServices;
-			client.Ready += RegisterDebugCommand;
+			client.Ready += RegisterStatusCommand;
 			client.MessageReceived += MessageReceivedAsync;
 			client.SlashCommandExecuted += SlashCommandHandler;
 
@@ -68,13 +68,17 @@ namespace HardVacuumRobot
 			return Task.CompletedTask;
 		}
 
-		async Task RegisterDebugCommand()
+		async Task RegisterStatusCommand()
 		{
 			Console.WriteLine("Registering /status command.");
 			try
 			{
 				var client = ServiceProvider.GetRequiredService<DiscordSocketClient>();
 				var guild = client.GetGuild(ulong.Parse(ConfigurationManager.AppSettings["Server"]));
+
+				var commands = await guild.GetApplicationCommandsAsync();
+				foreach(var command in commands)
+ 					await command.DeleteAsync();
 
 				var guildCommand = new SlashCommandBuilder();
 				guildCommand.WithName("status");
