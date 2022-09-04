@@ -83,13 +83,13 @@ namespace HardVacuumRobot
 							var embed = new EmbedBuilder()
 								.WithColor(color)
 								.WithTitle($"{icon} {server.Name}")
-								.WithDescription(status + Environment.NewLine + link)
+								.WithDescription(link)
 								.WithAuthor(await GetAdmin(server.Clients))
 								.WithTimestamp(DateTime.Now);
 
 							EmbedMap(embed, await ResourceCenter.GetMap(server.Map));
 
-							await channel.SendMessageAsync(embed: embed.Build());
+							await channel.SendMessageAsync(text: status, embed: embed.Build());
 							Console.WriteLine($"Adding {server.Name} ({server.Id}) with {server.Players} players to the waiting list.");
 							WaitingList.Add(server);
 						}
