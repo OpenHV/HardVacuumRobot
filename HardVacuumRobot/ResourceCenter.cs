@@ -56,12 +56,11 @@ namespace HardVacuumRobot
 							.WithDescription(map.Info)
 							.WithTitle(map.Title)
 							.WithUrl($"https://resource.openra.net/maps/{map.Id}")
-							.WithAuthor("A new map has been uploaded.")
-							.WithFooter($"by {map.Author}")
+							.WithAuthor(map.Author)
 							.WithImageUrl($"https://resource.openra.net/maps/{map.Id}/minimap")
 							.WithTimestamp(DateTime.Now);
 
-						await channel.SendMessageAsync(embed: embed.Build());
+						await channel.SendMessageAsync(text: "A new map has been uploaded.", embed: embed.Build());
 
 						lastHash = map.Hash;
 					}
