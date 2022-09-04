@@ -79,10 +79,11 @@ namespace HardVacuumRobot
 						{
 							var color = server.Protected ? Color.Red : Color.Orange;
 							var prefix = server.Protected ? "Locked" : "Open";
+							var locked = server.Protected ? "🔒" : "";
 							var embed = new EmbedBuilder()
 								.WithColor(color)
 								.WithDescription($"{prefix} server waiting for players.")
-								.WithTitle($"{server.Name}")
+								.WithTitle($"{locked} {server.Name}")
 								.WithAuthor(await GetAdmin(server.Clients))
 								.WithUrl(ServerBrowserAddress)
 								.WithTimestamp(DateTime.Now);
