@@ -19,19 +19,17 @@ namespace HardVacuumRobot
 			var miniYaml = "";
 			try
 			{
-				using (var httpClient = new HttpClient())
-				{
-					var response = await httpClient.GetAsync($"{InfoAddress}{fingerprint}");
-					miniYaml = await response.Content.ReadAsStringAsync();
-					var yaml = Regex.Replace(miniYaml.Replace("\t", "  "), @"@\d+", "");
+				using var httpClient = new HttpClient();
+				var response = await httpClient.GetAsync($"{InfoAddress}{fingerprint}");
+				miniYaml = await response.Content.ReadAsStringAsync();
+				var yaml = Regex.Replace(miniYaml.Replace("\t", "  "), @"@\d+", "");
 
-					var deserializer = new DeserializerBuilder().IgnoreUnmatchedProperties().Build();
-					var splitYaml = yaml.Split("Badges:");
-					var rootYaml = splitYaml[0];
+				var deserializer = new DeserializerBuilder().IgnoreUnmatchedProperties().Build();
+				var splitYaml = yaml.Split("Badges:");
+				var rootYaml = splitYaml[0];
 
-					var profile = deserializer.Deserialize<Profile>(yaml);
-					return profile;
-				}
+				var profile = deserializer.Deserialize<Profile>(yaml);
+				return profile;
 			}
 			catch (Exception e)
 			{

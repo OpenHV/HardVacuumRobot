@@ -70,14 +70,14 @@ namespace HardVacuumRobot
 
 		async Task RegisterDebugCommand()
 		{
-			System.Console.WriteLine("Registering /debug command.");
+			Console.WriteLine("Registering /status command.");
 			try
 			{
 				var client = ServiceProvider.GetRequiredService<DiscordSocketClient>();
 				var guild = client.GetGuild(ulong.Parse(ConfigurationManager.AppSettings["Server"]));
 
 				var guildCommand = new SlashCommandBuilder();
-				guildCommand.WithName("debug");
+				guildCommand.WithName("status");
 				guildCommand.WithDescription("Monitor uptime.");
 				await guild.CreateApplicationCommandAsync(guildCommand.Build());
 			}
@@ -91,22 +91,22 @@ namespace HardVacuumRobot
 		{
 			switch(command.Data.Name)
 			{
-				case "debug":
-					await HandleDebugCommand(command);
+				case "status":
+					await HandleStatusCommand(command);
 					break;
 			}
 		}
 
-		async Task HandleDebugCommand(SocketSlashCommand command)
+		static async Task HandleStatusCommand(SocketSlashCommand command)
 		{
-			var serverWatcher = Program.ServiceProvider.GetRequiredService<ServerWatcher>();
+			var serverWatcher = ServiceProvider.GetRequiredService<ServerWatcher>();
 			var serverWatcherEmbedBuiler = new EmbedBuilder()
 				.WithTitle("Server Watcher")
 				.WithDescription($"Last scan for games `{serverWatcher.LastSuccessfulScan().Seconds}` seconds ago.")
 				.WithColor(GetStatusColor(serverWatcher.WatchServers.Status))
 				.WithCurrentTimestamp();
 
-			var resourceCenter = Program.ServiceProvider.GetRequiredService<ResourceCenter>();
+			var resourceCenter = ServiceProvider.GetRequiredService<ResourceCenter>();
 			var resourceCenterEmbedBuiler = new EmbedBuilder()
 				.WithTitle("Resource Center")
 				.WithDescription($"Last check for maps `{resourceCenter.LastSuccessfulScan().Minutes}` minutes ago.")
@@ -117,29 +117,20 @@ namespace HardVacuumRobot
 			await command.RespondAsync(embeds: embeds);
 		}
 
-		Color GetStatusColor(TaskStatus status)
+		static Color GetStatusColor(TaskStatus status)
 		{
-			switch (status)
+			return status switch
 			{
-				case TaskStatus.Created:
-					return Color.Blue;
-				case TaskStatus.Running:
-					return Color.Green;
-				case TaskStatus.RanToCompletion:
-					return Color.DarkGreen;
-				case TaskStatus.WaitingForActivation:
-					return Color.LightOrange;
-				case TaskStatus.WaitingForChildrenToComplete:
-					return Color.Orange;
-				case TaskStatus.WaitingToRun:
-					return Color.DarkOrange;
-				case TaskStatus.Faulted:
-					return Color.Red;
-				case TaskStatus.Canceled:
-					return Color.DarkRed;
-				default:
-					return Color.Default;
-			}
+				TaskStatus.Created => Color.Blue,
+				TaskStatus.Running => Color.Green,
+				TaskStatus.RanToCompletion => Color.DarkGreen,
+				TaskStatus.WaitingForActivation => Color.LightOrange,
+				TaskStatus.WaitingForChildrenToComplete => Color.Orange,
+				TaskStatus.WaitingToRun => Color.DarkOrange,
+				TaskStatus.Faulted => Color.Red,
+				TaskStatus.Canceled => Color.DarkRed,
+				_ => Color.Default,
+			};
 		}
 
 		Task MessageReceivedAsync(SocketMessage message)

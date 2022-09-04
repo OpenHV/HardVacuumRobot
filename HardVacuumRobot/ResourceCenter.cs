@@ -27,10 +27,10 @@ namespace HardVacuumRobot
 		{
 			var server = discordClient.GetGuild(ulong.Parse(ConfigurationManager.AppSettings["Server"]));
 			channel = server.GetTextChannel(ulong.Parse(ConfigurationManager.AppSettings["DevelopmentChannel"]));
-			CheckMaps = Task.Factory.StartNew(() => RetrieveNewMaps(discordClient), CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+			CheckMaps = Task.Factory.StartNew(() => RetrieveNewMaps(), CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 		}
 
-		public async Task RetrieveNewMaps(DiscordSocketClient discordClient)
+		public async Task RetrieveNewMaps()
 		{
 			Console.WriteLine("Started looking for new maps.");
 
@@ -38,38 +38,37 @@ namespace HardVacuumRobot
 			{
 				try
 				{
-					using (var httpClient = new HttpClient())
+					using var httpClient = new HttpClient();
+					lastScan = DateTime.Now;
+					var response = await httpClient.GetAsync(LastMapAddress);
+					var json = await response.Content.ReadAsStringAsync();
+					var maps = JsonConvert.DeserializeObject<List<Map>>(json);
+					foreach (var map in maps)
 					{
-						lastScan = DateTime.Now;
-						var response = await httpClient.GetAsync(LastMapAddress);
-						var json = await response.Content.ReadAsStringAsync();
-						var maps = JsonConvert.DeserializeObject<List<Map>>(json);
-						foreach (var map in maps)
-						{
-							if (lastHash == map.Hash)
-								continue;
+						if (lastHash == map.Hash)
+							continue;
 
-							if (map.Mod != "hv")
-								continue;
+						if (map.Mod != "hv")
+							continue;
 
-							var embed = new EmbedBuilder()
-								.WithColor(Color.Blue)
-								.WithDescription(map.Info)
-								.WithTitle(map.Title)
-								.WithUrl($"https://resource.openra.net/maps/{map.Id}")
-								.WithAuthor("A new map has been uploaded.")
-								.WithFooter($"by {map.Author}")
-								.WithImageUrl($"https://resource.openra.net/maps/{map.Id}/minimap")
-								.WithTimestamp(DateTime.Now);
+						var embed = new EmbedBuilder()
+							.WithColor(Color.Blue)
+							.WithDescription(map.Info)
+							.WithTitle(map.Title)
+							.WithUrl($"https://resource.openra.net/maps/{map.Id}")
+							.WithAuthor("A new map has been uploaded.")
+							.WithFooter($"by {map.Author}")
+							.WithImageUrl($"https://resource.openra.net/maps/{map.Id}/minimap")
+							.WithTimestamp(DateTime.Now);
 
-							await channel.SendMessageAsync(embed: embed.Build());
+						await channel.SendMessageAsync(embed: embed.Build());
 
-							lastHash = map.Hash;
-						}
-
-						await Task.Delay(TimeSpan.FromHours(1));
+						lastHash = map.Hash;
 					}
+
+					await Task.Delay(TimeSpan.FromHours(1));
 				}
+
 				catch (WebException e)
 				{
 					Console.WriteLine(e.Message);
@@ -87,12 +86,10 @@ namespace HardVacuumRobot
 		{
 			try
 			{
-				using (var httpClient = new HttpClient())
-				{
-					var response = await httpClient.GetAsync($"{ResourceServerAddress}{hash}");
-					var json = await response.Content.ReadAsStringAsync();
-					return JsonConvert.DeserializeObject<List<Map>>(json).First();
-				}
+				using var httpClient = new HttpClient();
+				var response = await httpClient.GetAsync($"{ResourceServerAddress}{hash}");
+				var json = await response.Content.ReadAsStringAsync();
+				return JsonConvert.DeserializeObject<List<Map>>(json).First();
 			}
 			catch (Exception e)
 			{

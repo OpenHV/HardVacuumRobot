@@ -34,41 +34,36 @@ namespace HardVacuumRobot
 
 				try
 				{
-					using (var httpClient = new HttpClient())
+					using var httpClient = new HttpClient();
+
+					Console.WriteLine($"Downloading to {filePath}");
+
+					using var stream = await httpClient.GetStreamAsync(attachment.Url);
+					using var fileStream = new FileStream(filePath, FileMode.Create);
+					await stream.CopyToAsync(fileStream);
+					var miniYaml = ExtractMetaData(fileStream);
+					yaml = Regex.Replace(miniYaml.Replace("\t", "  "), @"@\d+", "");
+					yaml = yaml.Replace("{DEV_VERSION}", "development");
+
+					var deserializer = new DeserializerBuilder()
+						.WithTypeConverter(new DateTimeConverter(DateTimeKind.Utc, CultureInfo.InvariantCulture, new[] { "yyyy-MM-dd HH-mm-ss" }))
+						.Build();
+
+					var splitYaml = yaml.Split("Player:");
+					var rootYaml = splitYaml[0];
+					var metadata = deserializer.Deserialize<ReplayMetadata>(rootYaml);
+					var players = new List<Player>();
+					foreach (var playerYaml in splitYaml.Skip(1))
 					{
-						Console.WriteLine($"Downloading to {filePath}");
-
-						using (var stream = await httpClient.GetStreamAsync(attachment.Url))
-						{
-							using (var fileStream = new FileStream(filePath, FileMode.Create))
-							{
-								await stream.CopyToAsync(fileStream);
-								var miniYaml = ExtractMetaData(fileStream);
-								yaml = Regex.Replace(miniYaml.Replace("\t", "  "), @"@\d+", "");
-								yaml = yaml.Replace("{DEV_VERSION}", "development");
-
-								var deserializer = new DeserializerBuilder()
-									.WithTypeConverter(new DateTimeConverter(DateTimeKind.Utc, CultureInfo.InvariantCulture, new[] { "yyyy-MM-dd HH-mm-ss" }))
-									.Build();
-
-								var splitYaml = yaml.Split("Player:");
-								var rootYaml = splitYaml[0];
-								var metadata = deserializer.Deserialize<ReplayMetadata>(rootYaml);
-								var players = new List<Player>();
-								foreach (var playerYaml in splitYaml.Skip(1))
-								{
-									var player = deserializer.Deserialize<Player>(playerYaml);
-									players.Add(player);
-								}
-
-								var embed = await CreateEmbed(metadata, players);
-								if (embed != null)
-									await message.Channel.SendMessageAsync(embed: embed);
-
-								File.Delete(filePath);
-							}
-						}
+						var player = deserializer.Deserialize<Player>(playerYaml);
+						players.Add(player);
 					}
+
+					var embed = await CreateEmbed(metadata, players);
+					if (embed != null)
+						await message.Channel.SendMessageAsync(embed: embed);
+
+					File.Delete(filePath);
 				}
 				catch (Exception e)
 				{
@@ -253,3 +248,4 @@ namespace HardVacuumRobot
 		}
 	}
 }
+
