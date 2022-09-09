@@ -123,7 +123,7 @@ namespace HardVacuumRobot
 
 					await Task.Delay(TimeSpan.FromSeconds(10));
 				}
-				catch (WebException e)
+				catch (HttpRequestException e)
 				{
 					Console.WriteLine(e.Message);
 					await Task.Delay(TimeSpan.FromSeconds(60));
