@@ -151,25 +151,29 @@ namespace HardVacuumRobot
 
 		static async Task<EmbedAuthorBuilder> GetAdmin(List<Client> clients)
 		{
-			var admin = clients.SingleOrDefault(c => c.IsAdmin);
-			if (admin.Equals(default(Client)) || string.IsNullOrEmpty(admin.Name))
-				return new EmbedAuthorBuilder();
-
-			var profile = await ForumAuth.GetResponse(admin.Fingerprint);
-			if (profile == null || profile.Player == null)
+			var admin = clients.Single(c => c.IsAdmin);
+			if (!string.IsNullOrEmpty(admin.Fingerprint))
 			{
-				return new EmbedAuthorBuilder
+				var profile = await ForumAuth.GetResponse(admin.Fingerprint);
+				if (profile != null && profile.Player != null)
 				{
-					Name = admin.Name,
-				};
+					return new EmbedAuthorBuilder
+					{
+						Name = profile.Player.ProfileName,
+						Url = $"{ForumAuth.ProfileAddress}{profile.Player.ProfileID}",
+						IconUrl = profile.Player.Badges.Badge != null ? profile.Player.Badges.Badge.Icon48 : "",
+					};
+				}
+				else if (!string.IsNullOrEmpty(admin.Name))
+				{
+					return new EmbedAuthorBuilder
+					{
+						Name = admin.Name,
+					};
+				}
 			}
 
-			return new EmbedAuthorBuilder
-			{
-				Name = profile.Player.ProfileName,
-				Url = $"{ForumAuth.ProfileAddress}{profile.Player.ProfileID}",
-				IconUrl = profile.Player.Badges.Badge != null ? profile.Player.Badges.Badge.Icon48 : "",
-			};
+			return new EmbedAuthorBuilder();
 		}
 	}
 
