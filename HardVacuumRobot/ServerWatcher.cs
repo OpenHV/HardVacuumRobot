@@ -164,13 +164,13 @@ namespace HardVacuumRobot
 						IconUrl = profile.Player.Badges.Badge != null ? profile.Player.Badges.Badge.Icon48 : "",
 					};
 				}
-				else if (!string.IsNullOrEmpty(admin.Name))
+			}
+			else if (!string.IsNullOrEmpty(admin.Name))
+			{
+				return new EmbedAuthorBuilder
 				{
-					return new EmbedAuthorBuilder
-					{
 						Name = admin.Name,
-					};
-				}
+				};
 			}
 
 			return new EmbedAuthorBuilder();
