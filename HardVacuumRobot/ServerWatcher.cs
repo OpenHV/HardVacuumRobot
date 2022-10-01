@@ -157,11 +157,15 @@ namespace HardVacuumRobot
 				var profile = await ForumAuth.GetResponse(admin.Fingerprint);
 				if (profile != null && profile.Player != null)
 				{
+					var iconURL = "";
+					if (profile.Player.Badges != null && profile.Player.Badges.Badge != null)
+						iconURL = profile.Player.Badges.Badge.Icon48;
+
 					return new EmbedAuthorBuilder
 					{
 						Name = profile.Player.ProfileName,
 						Url = $"{ForumAuth.ProfileAddress}{profile.Player.ProfileID}",
-						IconUrl = profile.Player.Badges.Badge != null ? profile.Player.Badges.Badge.Icon48 : "",
+						IconUrl = iconURL,
 					};
 				}
 			}
