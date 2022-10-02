@@ -4,7 +4,6 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
-using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -57,7 +56,6 @@ namespace HardVacuumRobot
 
 						if (server.State == (int)ServerState.GameStarted && !PlayingList.Contains(server))
 						{
-
 							var embed = new EmbedBuilder()
 								.WithColor(Color.Green)
 								.WithDescription($"Game started with {server.Players} players: { string.Join(", ", server.Clients.Select(c => c.Name))}")
