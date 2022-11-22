@@ -58,14 +58,15 @@ namespace HardVacuumRobot
 						{
 							var embed = new EmbedBuilder()
 								.WithColor(Color.Green)
-								.WithDescription($"Game started with {server.Players} players: { string.Join(", ", server.Clients.Select(c => c.Name))}")
+								.WithDescription(string.Join(", ", server.Clients.Select(c => c.Name)))
 								.WithTitle($"{server.Name}")
 								.WithAuthor(await GetAdmin(server.Clients))
 								.WithTimestamp(DateTime.Now);
 
 							EmbedMap(embed, await ResourceCenter.GetMap(server.Map));
 
-							await channel.SendMessageAsync(embed: embed.Build());
+							var status = $"Game started with {server.Players} players.";
+							await channel.SendMessageAsync(text: status, embed: embed.Build());
 
 							Console.WriteLine($"Adding {server.Name} ({server.Id}) with {server.Players} players to the playing list.");
 							PlayingList.Add(server);
