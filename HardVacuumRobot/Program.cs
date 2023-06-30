@@ -113,7 +113,7 @@ namespace HardVacuumRobot
 			var resourceCenter = ServiceProvider.GetRequiredService<ResourceCenter>();
 			var resourceCenterEmbedBuiler = new EmbedBuilder()
 				.WithTitle("Resource Center")
-				.WithDescription($"Last check for maps `{resourceCenter.LastSuccessfulScan().Minutes}` minutes ago.")
+				.WithDescription($"Last check for maps `{resourceCenter.LastSuccessfulScan().Seconds}` seconds ago.")
 				.WithColor(GetStatusColor(resourceCenter.CheckMaps.Status))
 				.WithCurrentTimestamp();
 

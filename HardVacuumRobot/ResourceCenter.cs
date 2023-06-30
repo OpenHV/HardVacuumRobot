@@ -67,13 +67,13 @@ namespace HardVacuumRobot
 						lastHash = map.Hash;
 					}
 
-					await Task.Delay(TimeSpan.FromHours(1));
+					await Task.Delay(TimeSpan.FromMinutes(1));
 				}
 
 				catch (WebException e)
 				{
 					Console.WriteLine(e.Message);
-					await Task.Delay(TimeSpan.FromSeconds(60));
+					await Task.Delay(TimeSpan.FromMinutes(15));
 				}
 			}
 		}
