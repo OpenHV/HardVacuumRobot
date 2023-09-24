@@ -68,7 +68,7 @@ namespace HardVacuumRobot
 						lastHash = map.Hash;
 					}
 
-					await Task.Delay(TimeSpan.FromMinutes(1));
+					await Task.Delay(TimeSpan.FromSeconds(10));
 				}
 				catch (WebException e)
 				{
