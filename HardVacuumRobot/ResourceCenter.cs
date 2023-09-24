@@ -69,11 +69,14 @@ namespace HardVacuumRobot
 
 					await Task.Delay(TimeSpan.FromMinutes(1));
 				}
-
 				catch (WebException e)
 				{
 					Console.WriteLine(e.Message);
 					await Task.Delay(TimeSpan.FromMinutes(15));
+				}
+				catch (Exception e)
+				{
+					Console.WriteLine(e.Message);
 				}
 			}
 		}
