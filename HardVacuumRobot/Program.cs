@@ -24,6 +24,7 @@ namespace HardVacuumRobot
 				GatewayIntents = GatewayIntents.Guilds
 					| GatewayIntents.GuildIntegrations
 					| GatewayIntents.GuildMessages
+					| GatewayIntents.MessageContent
 			};
 
 			var collection = new ServiceCollection()
