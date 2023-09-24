@@ -63,6 +63,7 @@ namespace HardVacuumRobot
 							.WithTimestamp(DateTime.Now);
 
 						await channel.SendMessageAsync(text: "A new map has been uploaded.", embed: embed.Build());
+						Console.WriteLine("Announcing new map " + map.Title);
 
 						lastHash = map.Hash;
 					}
