@@ -87,7 +87,7 @@ namespace HardVacuumRobot
 			return new EmbedAuthorBuilder
 			{
 				Name = author,
-				Url = $"{MapAuthorAddress}{author}",
+				Url = $"{MapAuthorAddress}{Uri.EscapeDataString(author)}",
 			};
 		}
 
