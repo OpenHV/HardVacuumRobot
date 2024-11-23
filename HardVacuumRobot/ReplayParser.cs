@@ -228,7 +228,14 @@ namespace HardVacuumRobot
 		public class Player
 		{
 			public int ClientIndex { get; set; }
-			public string Name { get; set; }
+
+			string name;
+			public string Name
+			{
+				get => name == "bot-rogue-ai.name" ? "Rogue AI" : name;
+				set => name = value;
+			}
+
 			public bool IsHuman { get; set; }
 			public bool IsBot { get; set; }
 			public string FactionName { get; set; }
