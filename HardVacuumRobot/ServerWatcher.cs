@@ -58,9 +58,8 @@ namespace HardVacuumRobot
 						{
 							var embed = new EmbedBuilder()
 								.WithColor(Color.Green)
-								.WithDescription(string.Join(", ", server.Clients.Select(c => c.Name)))
 								.WithTitle($"{server.Name}")
-								.WithAuthor(await GetAdmin(server.Clients))
+								.WithAuthor(string.Join(", ", server.Clients.Select(c => c.Name)))
 								.WithTimestamp(DateTime.Now);
 
 							EmbedMap(embed, await ResourceCenter.GetMap(server.Map));
@@ -78,11 +77,9 @@ namespace HardVacuumRobot
 							var prefix = server.Protected ? "Locked" : "Open";
 							var icon = server.Protected ? "🔒" : "";
 							var status = $"{prefix} server waiting for players.";
-							var link = $"<openra-{server.Mod}-{server.Version}://{server.Address}>";
 							var embed = new EmbedBuilder()
 								.WithColor(color)
 								.WithTitle($"{icon} {server.Name}")
-								.WithDescription(link)
 								.WithAuthor(await GetAdmin(server.Clients))
 								.WithTimestamp(DateTime.Now);
 
@@ -143,7 +140,7 @@ namespace HardVacuumRobot
 			if (map != null)
 				return embed
 					.WithImageUrl($"https://resource.openra.net/maps/{map.Value.Id}/minimap")
-					.WithFooter($"{map.Value.Title} ({map.Value.Players} players)");
+					.WithDescription($"{map.Value.Title} ({map.Value.Players} players)");
 
 			return embed;
 		}
