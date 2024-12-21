@@ -48,7 +48,7 @@ namespace HardVacuumRobot
 						if (server.Mod != "hv")
 							continue;
 
-						if (server.Players < 1 || server.MaxPlayers < 2)
+						if (server.Players < 2 || server.MaxPlayers < 2)
 							continue;
 
 						if (server.State == (int)ServerState.ShuttingDown)
