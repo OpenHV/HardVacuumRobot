@@ -232,7 +232,7 @@ namespace HardVacuumRobot
 			string name;
 			public string Name
 			{
-				get => name == "bot-rogue-ai.name" ? "Rogue AI" : name;
+				get => name == "bot-rogue-ai.name" ? "🤖 Rogue AI" : name;
 				set => name = value;
 			}
 

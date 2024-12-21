@@ -258,7 +258,12 @@ namespace HardVacuumRobot
 	public struct Client
 	{
 		[JsonProperty("name")]
-		public string Name { get; private set; }
+		string name;
+		public string Name
+		{
+			get => name == "bot-rogue-ai.name" ? "🤖 Rogue AI" : name;
+			set => name = value;
+		}
 
 		[JsonProperty("fingerprint")]
 		public string Fingerprint { get; private set; }
