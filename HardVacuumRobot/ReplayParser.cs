@@ -238,6 +238,7 @@ namespace HardVacuumRobot
 
 			public bool IsHuman { get; set; }
 			public bool IsBot { get; set; }
+			public string BotType { get; set; }
 			public string FactionName { get; set; }
 			public string FactionId { get; set; }
 			public string Color { get; set; }
