@@ -181,17 +181,33 @@ namespace HardVacuumRobot
 			return embed.Build();
 		}
 
-		static string GetPlayers(IGrouping<int, Player> team)
+		static string GetFactionName(Player player)
 		{
-			return string.Join("\n", team.Select(p =>
-				!string.IsNullOrEmpty(p.Fingerprint) ? $"{GetPlayer(p.Fingerprint)} [{p.FactionName}]"
-				: $"{p.Name} [{p.FactionName}]"));
+			switch (player.FactionName)
+			{
+				case "faction-synapol.name":
+					return "Synapol";
+				case "faction-yuruki.name":
+					return "Yuruki";
+				default:
+					return "Unknown";
+			}
 		}
 
-		static string GetPlayer(string fingerprint)
+		static string GetPlayerName(Player player)
 		{
-			var profile = ForumAuth.GetResponse(fingerprint).Result;
-			return $"{profile.Player.ProfileName}";
+			if (!string.IsNullOrEmpty(player.Fingerprint))
+			{
+				var profile = ForumAuth.GetResponse(player.Fingerprint).Result;
+				return $"{profile.Player.ProfileName}";
+			}
+			else
+				return player.Name;
+		}
+
+		static string GetPlayers(IGrouping<int, Player> team)
+		{
+			return string.Join("\n", team.Select(p => $"{GetPlayerName(p)} [{GetFactionName(p)}]"));
 		}
 
 		static string GetWinners(List<Player> players)
