@@ -248,8 +248,12 @@ namespace HardVacuumRobot
 			string name;
 			public string Name
 			{
-				get => name == "bot-rogue-ai.name" ? "🤖 Rogue AI" : name;
-				set => name = value;
+				get => name == "bot-rogue-ai.name"
+						? "🤖 Rogue AI"
+						: name == "bot-cube-hunter-name"
+							? "🟥 Cube Hunter AI"
+							: name;
+					set => name = value;
 			}
 
 			public bool IsHuman { get; set; }
