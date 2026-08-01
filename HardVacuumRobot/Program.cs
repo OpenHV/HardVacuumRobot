@@ -12,10 +12,7 @@ namespace HardVacuumRobot
 	{
 		public static readonly IServiceProvider ServiceProvider = CreateProvider();
 
-		static void Main()
-		{
-			new Program().MainAsync().GetAwaiter().GetResult();
-		}
+		static Task Main() => new Program().MainAsync();
 
 		static IServiceProvider CreateProvider()
 		{
